@@ -1,0 +1,19 @@
+{
+  "name": "jig",
+  "owner": {
+    "name": "Edvantage",
+    "url": "https://github.com/Edvantage26"
+  },
+  "metadata": {
+    "description": "Marketplace for jig, a configurable harness for coding agents.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "jig",
+      "source": "./",
+      "description": "Guardrails, verification and project memory for coding agents, configured per repo with .claude/harness.json.",
+      "category": "development"
+    }
+  ]
+}

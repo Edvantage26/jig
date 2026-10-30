@@ -1,0 +1,14 @@
+{
+  "$comment": "Per-repo contract read by jig hooks. Copy to .claude/harness.json and adapt.",
+  "profile": "service",
+  "trunk": "main",
+  "verify": [
+    "ruff check .",
+    "pytest -q"
+  ],
+  "prod_guards": {
+    "mcp_servers": ["postgres-prod"],
+    "command_patterns": ["DB_ENV=prod"]
+  },
+  "knowledge": ".okf"
+}
