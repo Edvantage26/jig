@@ -3,7 +3,9 @@ type: Architecture
 title: Hook runtime (dispatcher and modules)
 description: One entry point per hook event that loads harness.json and runs the enabled modules.
 tags: [hooks, runtime, modules]
-timestamp: '2026-10-30T16:00:00Z'
+generated:
+  by: process:okf-migrate
+  at: '2026-10-30T16:00:00Z'
 ---
 
 # Flow

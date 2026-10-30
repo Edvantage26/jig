@@ -3,7 +3,9 @@ type: Component
 title: danger guard
 description: PreToolUse guard that confirms or refuses shell commands that destroy work, history or data.
 tags: [guard, hooks, bash]
-timestamp: '2026-10-30T16:00:00Z'
+generated:
+  by: process:okf-migrate
+  at: '2026-10-30T16:00:00Z'
 ---
 
 Source: `src/guards/danger.mjs`. Runs on `Bash` tool calls in every profile.

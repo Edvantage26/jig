@@ -3,7 +3,9 @@ type: Decision
 title: Design principles
 description: Rules every jig component must follow.
 tags: [decision, principles, security]
-timestamp: '2026-10-30T12:00:00Z'
+generated:
+  by: process:okf-migrate
+  at: '2026-10-30T12:00:00Z'
 ---
 
 - **Mechanisms over prompts.** A rule that matters is enforced by a hook.

@@ -3,7 +3,9 @@ type: Plan
 title: Roadmap
 description: Phases from proving jig in a real repo to the doctor command.
 tags: [roadmap]
-timestamp: '2026-10-30T16:00:00Z'
+generated:
+  by: process:okf-migrate
+  at: '2026-10-30T16:00:00Z'
 ---
 
 Order changed on 2026-10-30: build the generic structure in jig first, then prove it in real repos.

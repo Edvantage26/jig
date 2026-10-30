@@ -3,7 +3,9 @@ type: Architecture
 title: Profiles
 description: Which jig components apply to each kind of repo.
 tags: [profiles]
-timestamp: '2026-10-30T12:00:00Z'
+generated:
+  by: process:okf-migrate
+  at: '2026-10-30T12:00:00Z'
 ---
 
 | Profile | Components | For |

@@ -3,7 +3,9 @@ type: Overview
 title: jig overview
 description: What jig is, the four pieces of a harness, and what exists today.
 tags: [overview, harness]
-timestamp: '2026-10-30T16:00:00Z'
+generated:
+  by: process:okf-migrate
+  at: '2026-10-30T16:00:00Z'
 ---
 
 # What it is

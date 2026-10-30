@@ -3,7 +3,9 @@ type: Architecture
 title: Plugin layout and distribution
 description: jig is a Claude Code plugin and its own marketplace in the same repo.
 tags: [plugin, marketplace, distribution]
-timestamp: '2026-10-30T12:00:00Z'
+generated:
+  by: process:okf-migrate
+  at: '2026-10-30T12:00:00Z'
 ---
 
 # Layout

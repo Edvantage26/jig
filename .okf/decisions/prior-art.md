@@ -3,7 +3,9 @@ type: Decision
 title: Prior art - take ideas, not code
 description: What was reviewed before designing jig and what was taken from each.
 tags: [decision, prior-art]
-timestamp: '2026-10-30T12:00:00Z'
+generated:
+  by: process:okf-migrate
+  at: '2026-10-30T12:00:00Z'
 ---
 
 Reviewed on 2026-10-30 by reading the repositories.

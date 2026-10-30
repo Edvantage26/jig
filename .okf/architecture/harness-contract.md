@@ -3,7 +3,9 @@ type: Configuration
 title: harness.json contract
 description: The per-repo file that makes generic hooks behave correctly in each project.
 tags: [config, contract, hooks]
-timestamp: '2026-10-30T16:00:00Z'
+generated:
+  by: process:okf-migrate
+  at: '2026-10-30T16:00:00Z'
 ---
 
 Each repo commits `.claude/harness.json` (template in `templates/harness.json`).
