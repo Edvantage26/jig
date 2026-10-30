@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/Edvantage26/jig/main/schema/harness.schema.json",
+  "title": "jig harness.json",
+  "description": "Per-repo contract read by the jig hooks (.claude/harness.json).",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "const": 1, "description": "Contract version." },
+    "profile": {
+      "enum": ["minimal", "service", "product"],
+      "default": "minimal",
+      "description": "Which modules run by default: minimal (guardrails + memory), service (+ verification), product (+ lanes and review)."
+    },
+    "trunk": { "type": "string", "minLength": 1, "default": "main", "description": "Protected branch." },
+    "verify": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "default": [],
+      "description": "Commands that must pass before the agent calls a change done."
+    },
+    "knowledge": {
+      "type": ["string", "null"],
+      "default": null,
+      "description": "Path of the project knowledge bundle (OKF), e.g. .okf"
+    },
+    "modules": {
+      "type": "object",
+      "description": "Per-module switch (true/false) or options object (with optional enabled).",
+      "additionalProperties": {
+        "oneOf": [
+          { "type": "boolean" },
+          {
+            "type": "object",
+            "properties": { "enabled": { "type": "boolean" } }
+          }
+        ]
+      },
+      "properties": {
+        "brief": {
+          "oneOf": [{ "type": "boolean" }, { "type": "object", "properties": { "enabled": { "type": "boolean" } }, "additionalProperties": false }]
+        },
+        "danger": {
+          "oneOf": [
+            { "type": "boolean" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "enabled": { "type": "boolean" },
+                "ignore_rules": {
+                  "type": "array",
+                  "items": {
+                    "enum": ["git-skip-hooks", "git-reset-hard", "git-force-push", "git-clean", "git-discard-changes", "rm-recursive-force", "sql-destructive", "docker-destructive", "disk-destroy"]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

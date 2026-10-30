@@ -1,0 +1,46 @@
+// Runs every enabled module for one hook event and combines their decisions.
+// Internal failures never block the agent (fail open); a module that matched a rule does.
+
+import { combineDecisions, buildHookOutput, contextDecision } from './hook-io.mjs';
+import { loadHarnessConfig, resolveProjectRoot, isModuleEnabled, getModuleOptions, CONFIG_RELATIVE_PATH } from './config.mjs';
+import { ALL_MODULES, KNOWN_MODULE_IDS, modulesForEvent } from './registry.mjs';
+
+export function runHookEvent(eventName, hookInput, { environment = process.env, availableModules = ALL_MODULES, reportInternalError = defaultErrorReporter } = {}) {
+  const projectRoot = resolveProjectRoot(hookInput, environment);
+  const loadedConfig = loadHarnessConfig(projectRoot, KNOWN_MODULE_IDS);
+
+  if (loadedConfig.status === 'missing') {
+    // Inactive without a contract: one line at session start so the agent can mention it, nothing else.
+    if (eventName !== 'SessionStart') return null;
+    return buildHookOutput(eventName, contextDecision('setup', `jig plugin is installed but inactive here: no ${CONFIG_RELATIVE_PATH}. Template: templates/harness.json in the jig repo.`));
+  }
+  if (loadedConfig.status === 'invalid') {
+    reportInternalError(`invalid ${loadedConfig.configPath}: ${loadedConfig.errors.join('; ')}`);
+    if (eventName !== 'SessionStart') return null;
+    return buildHookOutput(eventName, contextDecision('setup', `jig is inactive because ${CONFIG_RELATIVE_PATH} is invalid: ${loadedConfig.errors.join('; ')}. Tell the person so it can be fixed.`));
+  }
+
+  const { config } = loadedConfig;
+  const enabledModules = availableModules.filter((moduleDefinition) => isModuleEnabled(moduleDefinition, config));
+  const eventModules = modulesForEvent(eventName, hookInput.tool_name, enabledModules);
+  const moduleDecisions = [];
+  for (const moduleDefinition of eventModules) {
+    try {
+      moduleDecisions.push(moduleDefinition.run({
+        hookInput,
+        config,
+        projectRoot,
+        enabledModules,
+        moduleOptions: getModuleOptions(moduleDefinition.id, config),
+      }));
+    } catch (moduleError) {
+      reportInternalError(`module ${moduleDefinition.id} failed: ${moduleError.stack || moduleError}`);
+    }
+  }
+  return buildHookOutput(eventName, combineDecisions(moduleDecisions));
+}
+
+function defaultErrorReporter(errorMessage) {
+  // stderr with exit 0 is only shown in verbose mode: visible for debugging, silent for the agent.
+  process.stderr.write(`jig: ${errorMessage}\n`);
+}

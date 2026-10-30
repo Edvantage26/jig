@@ -1,0 +1,71 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import dangerGuard, { findDangerousCommands, DANGER_RULES } from '../src/guards/danger.mjs';
+
+const EXPECTED_DECISIONS = [
+  // Routine work passes.
+  ['git status', 'allow'],
+  ['git commit -m "refactor: remove --no-verify mention"', 'allow'],
+  ['git push origin feature/x', 'allow'],
+  ['git checkout -b feature/new', 'allow'],
+  ['git restore --staged src/app.ts', 'allow'],
+  ['git clean -n', 'allow'],
+  ['rm -rf node_modules dist', 'allow'],
+  ['rm -rf /tmp/build-cache', 'allow'],
+  ['rm file.txt', 'allow'],
+  ['psql -c "DELETE FROM sessions WHERE expired"', 'allow'],
+  ['docker compose down', 'allow'],
+  // Destructive but sometimes intended: the person confirms.
+  ['git reset --hard origin/main', 'ask'],
+  ['git push --force', 'ask'],
+  ['git push -f origin main', 'ask'],
+  ['git push origin +main', 'ask'],
+  ['git push --force-with-lease', 'ask'],
+  ['git clean -fd', 'ask'],
+  ['git checkout -- .', 'ask'],
+  ['git restore src/app.ts', 'ask'],
+  ['git stash drop', 'ask'],
+  ['git branch -D old-feature', 'ask'],
+  ['rm -rf src', 'ask'],
+  ['rm -r -f ./data', 'ask'],
+  ['psql -c "DROP TABLE users"', 'ask'],
+  ['psql -c "truncate orders"', 'ask'],
+  ['psql -c "DELETE FROM orders;"', 'ask'],
+  ['docker volume rm pgdata', 'ask'],
+  ['docker compose down -v', 'ask'],
+  ['cd repo && git fetch && git reset --hard', 'ask'],
+  ['bash -c "git reset --hard"', 'ask'],
+  ['sudo rm -rf /var/lib/app', 'ask'],
+  // Bypassing safety or wiping everything: refused.
+  ['git commit --no-verify -m "wip"', 'deny'],
+  ['git commit -nm "wip"', 'deny'],
+  ['git push --no-verify', 'deny'],
+  ['git -c core.hooksPath=/dev/null commit -m x', 'deny'],
+  ['rm -rf /', 'deny'],
+  ['rm -rf ~', 'deny'],
+  ['mkfs.ext4 /dev/sdb1', 'deny'],
+  ['dd if=/dev/zero of=/dev/sda', 'deny'],
+];
+
+for (const [commandLine, expectedDecision] of EXPECTED_DECISIONS) {
+  test(`danger: ${expectedDecision} <- ${commandLine}`, () => {
+    const moduleDecision = dangerGuard.run({ hookInput: { tool_input: { command: commandLine } }, moduleOptions: {} });
+    assert.equal(moduleDecision.kind, expectedDecision, JSON.stringify(moduleDecision));
+  });
+}
+
+test('every non-allow decision explains itself', () => {
+  const moduleDecision = dangerGuard.run({ hookInput: { tool_input: { command: 'git reset --hard' } }, moduleOptions: {} });
+  assert.match(moduleDecision.reason, /git-reset-hard/);
+  assert.match(moduleDecision.reason, /stash/);
+});
+
+test('ignore_rules switches a rule off for the repo', () => {
+  assert.equal(findDangerousCommands('rm -rf src', ['rm-recursive-force']).length, 0);
+  assert.equal(findDangerousCommands('rm -rf src').length, 1);
+});
+
+test('rule ids are unique', () => {
+  const ruleIds = DANGER_RULES.map((dangerRule) => dangerRule.id);
+  assert.equal(new Set(ruleIds).size, ruleIds.length);
+});

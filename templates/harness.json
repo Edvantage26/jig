@@ -1,14 +1,11 @@
 {
-  "$comment": "Per-repo contract read by jig hooks. Copy to .claude/harness.json and adapt.",
+  "$schema": "https://raw.githubusercontent.com/Edvantage26/jig/main/schema/harness.schema.json",
+  "version": 1,
   "profile": "service",
   "trunk": "main",
-  "verify": [
-    "ruff check .",
-    "pytest -q"
-  ],
-  "prod_guards": {
-    "mcp_servers": ["postgres-prod"],
-    "command_patterns": ["DB_ENV=prod"]
-  },
-  "knowledge": ".okf"
+  "verify": ["npm test"],
+  "knowledge": ".okf",
+  "modules": {
+    "danger": { "ignore_rules": [] }
+  }
 }

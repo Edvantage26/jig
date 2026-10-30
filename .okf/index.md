@@ -9,5 +9,6 @@ its own marketplace.
 
 * [Overview](overview.md) - what jig is, the four pieces and the current status.
 * [architecture/](architecture/index.md) - plugin layout, the `harness.json` contract and profiles.
+* [guards/](guards/index.md) - guards that run before tool calls.
 * [decisions/](decisions/index.md) - prior art reviewed and the design decisions taken.
 * [Roadmap](roadmap.md) - phases, from proving it in a real repo to `jig doctor`.

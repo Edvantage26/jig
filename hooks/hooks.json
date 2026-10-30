@@ -1,0 +1,21 @@
+{
+  "description": "jig: one entry point per event; modules and options come from the repo's .claude/harness.json.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/bin/jig-hook.mjs\" SessionStart", "timeout": 10 }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/bin/jig-hook.mjs\" PreToolUse", "timeout": 10 }
+        ]
+      }
+    ]
+  }
+}

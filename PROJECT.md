@@ -30,23 +30,32 @@ Decision: take ideas, not code; keep `jig` small, readable and enforcement-first
 jig/
 ├── .claude-plugin/plugin.json        plugin manifest
 ├── .claude-plugin/marketplace.json   the repo is its own marketplace (source "./")
-├── hooks/hooks.json                  planned: guard wiring (uses ${CLAUDE_PLUGIN_ROOT})
-├── scripts/                          planned: hook implementations, no dependencies
-├── skills/                           planned: method skills (ftd, verify, review)
-├── agents/                           planned: reviewers + finding verifier
-└── templates/harness.json            per-repo contract example
+├── hooks/hooks.json                  every event -> node bin/jig-hook.mjs <Event>
+├── bin/jig-hook.mjs                  single entry point (stdin JSON in, decision JSON out, exit 0)
+├── src/core/                         dispatcher, config, registry, hook-io, shell-parse
+├── src/context/                      SessionStart modules (brief)
+├── src/guards/                       PreToolUse modules (danger; planned: prod, secrets)
+├── src/gates/                        planned: Stop modules (verify, knowledge)
+├── schema/harness.schema.json        contract for editors
+├── templates/harness.json            contract example
+├── skills/  agents/  commands/       planned
+└── test/                             node:test suite, run in CI on Node 18/20/22
 ```
+
+Module contract: `{ id, event, profiles, description, toolNames?, run(context) -> decision }`.
+Decisions: `allow`, `ask`, `deny`, `block` (Stop), `context` (SessionStart). Detail in
+`.okf/architecture/hook-runtime.md`.
 
 ### Per-repo contract: `.claude/harness.json`
 
 | Field | Meaning |
 |---|---|
-| `profile` | `minimal`, `service` or `product`: which components apply |
+| `version` | Contract version (`1`) |
+| `profile` | `minimal`, `service` or `product`: which modules run by default |
 | `trunk` | Protected branch name |
-| `verify` | Commands that must pass before the agent stops after code changes |
-| `prod_guards.mcp_servers` | MCP servers treated as production (writes blocked) |
-| `prod_guards.command_patterns` | Shell patterns treated as production (blocked or confirmed) |
+| `verify` | Commands that must pass before the agent calls a change done |
 | `knowledge` | Path of the OKF knowledge bundle |
+| `modules.<id>` | `true`/`false`, or an options object for that module |
 
 ## Technical decisions
 
@@ -60,11 +69,13 @@ jig/
 
 ## Phases
 
-1. **Prove in a real repo** (the document-processing backend): implement the hooks in that repo's `.claude/`, reading
-   `harness.json`. Verify with real sessions.
-2. **Second and third repo**: a web product (front + back) and a small service, to find what
-   does not generalize.
-3. **Move into jig**: hooks, scripts and templates; the first repo switches to the plugin.
-4. **Method skills + reviewers**: `ftd`, `verify`, `review`, finding verifier.
-5. **`jig doctor`** and an optional private pack for Edvantage-specific checks (observability,
-   backups, secrets manager) that stays outside this public repo.
+1. **Core + first guard** (done 2026-10-30): dispatcher, config, schema, `brief`, `danger`, tests, CI,
+   verified in real Claude Code sessions.
+2. **`prod` and `secrets` guards.**
+3. **Session state + Stop gates**: `verify`, `knowledge`.
+4. **`/jig:init` and `jig doctor`.**
+5. **Method skills + reviewers**: `ftd`, `verify`, `review`, finding verifier.
+
+After each increment the plugin is tried in real repos of different shapes (a document-processing
+backend, a web product, a small service). The contract is frozen once three of them run it. An
+optional private pack for company-specific checks stays outside this public repo.

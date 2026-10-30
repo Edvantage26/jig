@@ -7,9 +7,8 @@ the same no matter who makes it. `jig` does that for coding agents (Claude Code 
 repo in place with guardrails, makes the agent prove its work before calling it done, and keeps what
 it learns in the repo instead of in a chat that disappears.
 
-> **Status: early design (v0.1.0).** This repository contains the structure and the contract. The
-> hooks and skills are being built and proven on real projects before they land here. Nothing below
-> marked *planned* exists yet.
+> **Status: early (v0.1.0).** The hook runtime, the session brief and the `danger` guard work and are
+> tested. Everything marked *planned* does not exist yet.
 
 ## Why
 
@@ -40,13 +39,20 @@ that pile a fixed shape.
 
 ```json
 {
+  "$schema": "https://raw.githubusercontent.com/Edvantage26/jig/main/schema/harness.schema.json",
+  "version": 1,
   "profile": "service",
   "trunk": "main",
-  "verify": ["ruff check .", "pytest -q"],
-  "prod_guards": { "mcp_servers": ["postgres-prod"], "command_patterns": ["DB_ENV=prod"] },
-  "knowledge": ".okf"
+  "verify": ["npm test"],
+  "knowledge": ".okf",
+  "modules": {
+    "danger": { "ignore_rules": [] }
+  }
 }
 ```
+
+Without this file jig stays inactive. If the file is invalid, jig stays inactive and tells the agent
+why at session start.
 
 | Level | Examples | Lives in |
 |---|---|---|
@@ -62,15 +68,35 @@ Not every repo needs the same weight.
 - `service`: + verification gate and CI checks. For backends and APIs.
 - `product`: + work lanes (fast change vs. spec-driven) and adversarial review. For products.
 
-## Planned components
+## Components
 
-- **Hooks**: `danger-guard` (confirm destructive commands), `prod-guard` (block writes to production
-  resources declared in `harness.json`), `verify-gate` (run the `verify` commands before the agent
-  stops), `knowledge-guard` (ask the agent to update the knowledge bundle after relevant changes).
-- **Skills**: `ftd` (one short feature document with evidence, for ordinary changes), `verify`,
-  `review` (independent reviewers plus a verifier that tries to refute each finding).
-- **`jig doctor`**: audit a repo against its profile (knowledge bundle valid, CI present, tests,
-  secrets committed, guards wired).
+| Component | Event | Status |
+|---|---|---|
+| `brief`: tells the agent at session start which harness runs here | SessionStart | works |
+| `danger`: confirms or refuses commands that destroy work or data (`git reset --hard`, force push, `rm -rf`, `--no-verify`, `DROP TABLE`...) | PreToolUse | works |
+| `prod`: blocks writes to production resources declared in `harness.json` | PreToolUse | planned |
+| `secrets`: refuses committing secrets | PreToolUse | planned |
+| `verify-gate`: no "done" after code changes without running `verify` | Stop | planned |
+| `knowledge-guard`: asks to update the knowledge bundle after relevant changes | Stop | planned |
+| `/jig:init`, `jig doctor`: configure and audit a repo | command | planned |
+| Skills `ftd`, `verify`, `review` and a finding verifier | skills | planned |
+
+### How it works
+
+Every hook event calls one entry point, `bin/jig-hook.mjs`. It loads `.claude/harness.json`, runs the
+modules enabled for that event and profile, and combines their decisions (refuse > ask > allow).
+A module is one file with `{ id, event, profiles, run() }`; adding one does not touch the hook
+wiring. Internal errors never block the agent; a matched rule does.
+
+Requirements: Node 18 or later.
+
+## Development
+
+```bash
+npm test                                  # node:test, no dependencies
+claude --plugin-dir . -p "..."            # try the plugin in a real session without installing it
+claude plugin validate .
+```
 
 ## Principles
 

@@ -3,7 +3,7 @@ type: Overview
 title: jig overview
 description: What jig is, the four pieces of a harness, and what exists today.
 tags: [overview, harness]
-timestamp: '2026-10-30T12:00:00Z'
+timestamp: '2026-10-30T16:00:00Z'
 ---
 
 # What it is
@@ -27,11 +27,14 @@ The frame is generic; each repo describes itself in `.claude/harness.json`
 
 # Status
 
-v0.1.0 (2026-10-30): manifests, README, spec and the contract template. No hooks or skills yet;
-they are proven in a real project first (see [roadmap](roadmap.md)).
+Increment 1 done (2026-10-30): [hook runtime](architecture/hook-runtime.md) with the `brief`
+context module and the [danger guard](guards/danger.md), JSON schema, tests and CI. Next increments
+in the [roadmap](roadmap.md).
 
 # Code map
 
 - `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`: see [plugin layout](architecture/plugin-layout.md).
-- `templates/harness.json`: example of the per-repo contract.
+- `bin/jig-hook.mjs`, `src/`: hook runtime and modules.
+- `schema/harness.schema.json`, `templates/harness.json`: the per-repo contract.
+- `test/`: `npm test` (node:test, no dependencies).
 - [PROJECT.md](https://github.com/Edvantage26/jig/blob/main/PROJECT.md): full spec.
