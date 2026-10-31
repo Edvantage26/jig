@@ -56,7 +56,7 @@ If `.backfill-state.json` exists, resume from the cursor; otherwise, fresh boots
 ### Extract: generate event stream
 
 ```bash
-uv run "${CLAUDE_SKILL_DIR}/scripts/okf_backfill_events.py" <repo-dir> \
+python3 "${CLAUDE_SKILL_DIR}/scripts/okf_backfill_events.py" <repo-dir> \
   --out events.jsonl \
   [--no-sessions] [--sessions-dir ~/.claude/projects] \
   [--max-text 2000] [--skip-globs "vendor/**"]
@@ -191,7 +191,7 @@ is billed at the frontier rate on every following turn, and the routing exists t
 
 5. **Run coverage check to guarantee every event is mapped:**
    ```bash
-   uv run "${CLAUDE_SKILL_DIR}/scripts/okf_backfill_events.py" \
+   python3 "${CLAUDE_SKILL_DIR}/scripts/okf_backfill_events.py" \
      --check-coverage events.jsonl .okf
    ```
    Exit code 0 means all live events (non-skipped) appear in the bundle's `sources` or log.
@@ -199,7 +199,7 @@ is billed at the frontier rate on every following turn, and the routing exists t
 
 6. **Validate bundle schema:**
    ```bash
-   uv run "${CLAUDE_SKILL_DIR}/../validate/scripts/okf_validate.py" .okf --strict
+   python3 "${CLAUDE_SKILL_DIR}/../validate/scripts/okf_validate.py" .okf --strict
    ```
    Fix every error before finishing.
 
@@ -311,7 +311,7 @@ character-based, host-dependent) and a cheap worker may not notice the cut. The 
 the whole diff instead and emits a deterministic sample:
 
 ```bash
-uv run "${CLAUDE_SKILL_DIR}/scripts/okf_backfill_events.py" <repo-dir> --show <sha> \
+python3 "${CLAUDE_SKILL_DIR}/scripts/okf_backfill_events.py" <repo-dir> --show <sha> \
   [--only <path>] [--max-diff-lines 300] [--per-file-lines 120] [--max-line-chars 400] \
   [--skip-globs "vendor/**"]
 ```

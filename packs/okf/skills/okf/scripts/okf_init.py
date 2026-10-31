@@ -11,14 +11,19 @@ with a creation entry under today's ISO date heading, and one starter concept
 The scaffold is meant to be exemplary: `okf_validate.py --strict` should pass
 it with zero warnings.
 
-Run:  uv run scripts/okf_init.py <target-dir> [--title "..."] [--force]
+Run:  python3 scripts/okf_init.py <target-dir> [--title "..."] [--force]
 """
 from __future__ import annotations
 
 import argparse
 import sys
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
+
+# Prefer the PyYAML bundled in vendor/ (repo root) so plain `python3` works without pip or uv.
+_VENDOR_DIRECTORY = Path(__file__).resolve().parents[3] / "vendor"
+if _VENDOR_DIRECTORY.is_dir():
+    sys.path.insert(0, str(_VENDOR_DIRECTORY))
 
 import yaml
 
@@ -94,8 +99,8 @@ def main() -> int:
         return 1
 
     title = args.title or humanize(args.target.resolve().name)
-    today = datetime.now(UTC).date().isoformat()
-    now_iso = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+    today = datetime.now(timezone.utc).date().isoformat()
+    now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     args.target.mkdir(parents=True, exist_ok=True)
     (args.target / "index.md").write_text(build_index(title), encoding="utf-8")
@@ -104,7 +109,7 @@ def main() -> int:
 
     validator = Path(__file__).resolve().parents[2] / "validate" / "scripts" / "okf_validate.py"
     print(f"created OKF bundle scaffold at {args.target}")
-    print(f"hint: validate it — uv run {validator} {args.target} --strict (or the validate skill)")
+    print(f"hint: validate it — python3 {validator} {args.target} --strict (or the validate skill)")
     return 0
 
 

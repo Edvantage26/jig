@@ -17,7 +17,7 @@ The default layout is force (cose) up to AUTO_COSE_MAX concepts, then the linear
 concentric layout — force-directed cost grows roughly quadratically with node
 count and freezes the page on large bundles. An explicit --layout always wins.
 
-Run:  uv run okf_visualize.py <bundle-dir> [-o viz.html]
+Run:  python3 okf_visualize.py <bundle-dir> [-o viz.html]
 """
 from __future__ import annotations
 
@@ -26,6 +26,11 @@ import json
 import re
 import sys
 from pathlib import Path
+
+# Prefer the PyYAML bundled in vendor/ (repo root) so plain `python3` works without pip or uv.
+_VENDOR_DIRECTORY = Path(__file__).resolve().parents[3] / "vendor"
+if _VENDOR_DIRECTORY.is_dir():
+    sys.path.insert(0, str(_VENDOR_DIRECTORY))
 
 import yaml
 

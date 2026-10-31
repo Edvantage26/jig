@@ -46,7 +46,7 @@ keep) belongs to the weaver, not to you.
   through the emitter:
 
   ```bash
-  uv run <emitter> <repo> --show <sha> [--skip-globs ...]
+  python3 <emitter> <repo> --show <sha> [--skip-globs ...]
   ```
 
   The emitter prints the complete stat (every file, with line counts), then the patches capped
@@ -54,7 +54,7 @@ keep) belongs to the weaver, not to you.
   fixed last line: `[diff: shown=X total=Y files_shown=A files_total=B truncated=true|false]`.
   - Never run a raw `git show <sha>`: the harness would cut it blindly, mid-hunk.
   - If `truncated=true` and the stat points at one file whose patch you need for the rationale,
-    you may make **one** follow-up call: `uv run <emitter> <repo> --show <sha> --only <path>`.
+    you may make **one** follow-up call: `python3 <emitter> <repo> --show <sha> --only <path>`.
     That is the only permitted escalation; then write what you have.
 - **Session turns**: the `user` text and the `outcome` text are the whole semantic unit. The
   jq fetch is the only tool call they need; do not go looking for more.
