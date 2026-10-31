@@ -10,7 +10,7 @@ OKF v0.2. Read `.okf/index.md` first and follow the links to the relevant concep
 that affects a documented asset (contract, module, decision, roadmap), update its concept body and
 `generated: { by: <agent>/<version> or human:<id>, at: <ISO 8601> }`. Add a dated `.okf/log.md` entry
 only for lifecycle events (created, deprecated, superseded, regenerated, verified). Validate with the
-OKF validator in `--strict` mode (`uv run packs/okf/skills/validate/scripts/okf_validate.py .okf --strict`).
+OKF validator in `--strict` mode (`python3 packs/okf/skills/validate/scripts/okf_validate.py .okf --strict`).
 
 ## Rules for this repo
 

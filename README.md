@@ -99,8 +99,10 @@ modules of the enabled features for that event, and combines their decisions (re
 A module is one file with `{ id, event, feature, run() }`; adding one does not touch the hook
 wiring. Internal errors never block the agent; a matched rule does.
 
-Requirements: Node 18 or later; the OKF toolkit scripts also need [uv](https://docs.astral.sh/uv/)
-(Python).
+Requirements: **Node 18+** (hooks and the `jig` CLI) and **Python 3.9+** (the OKF toolkit scripts),
+nothing else: no `uv`, no `pip install`, no network. PyYAML ships inside the plugin
+(`packs/okf/vendor/`). Python 3.9+ comes with most Linux distributions and with the macOS
+command line tools (the ones that provide `git`).
 
 ## Development
 

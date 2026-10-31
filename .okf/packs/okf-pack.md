@@ -5,7 +5,7 @@ description: The OKF toolkit vendored as a git subtree of the Edvantage26/okf-sk
 tags: [okf, subtree, vendor]
 generated:
   by: claude-code/claude-opus-5-5
-  at: '2026-10-31T12:00:00Z'
+  at: '2026-10-31T15:00:00Z'
 sources:
   - id: fork
     resource: https://github.com/Edvantage26/okf-skills
@@ -22,4 +22,7 @@ Its `LICENSE`, `NOTICE` and `FORK.md` stay inside the pack.
 - **Updating:** change the fork first (its tests run locally, see its `FORK.md`), then:
   `git subtree pull --prefix=packs/okf https://github.com/Edvantage26/okf-skills.git main --squash`.
   Never edit `packs/okf/` in jig directly.
+- **Runtime:** the scripts run with the system `python3` (3.9+); PyYAML 6.0.3 is vendored in
+  `packs/okf/vendor/yaml` (fork change of 2026-10-31), so no `uv`, `pip` or network is needed.
+  Verified with `python3 -S` (no system packages) and a clean Python 3.9.
 - **Size:** about 9 MB, 7 MB of it upstream benchmarks; kept whole so subtree pulls stay clean.
