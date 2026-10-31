@@ -166,21 +166,28 @@ export default {
         return { path: changedPath, isDeleted: false, modifiedMilliseconds, signature: `${changedPath}:${Math.floor(modifiedMilliseconds)}` };
       })
       .filter((pendingFile) => pendingFile.isDeleted || pendingFile.modifiedMilliseconds > bundleUpdatedMilliseconds);
+    // A deletion has no date to compare with the bundle, so it would stay pending forever and ride
+    // along every later reminder: it is mentioned once per session and then dropped.
+    const deletionsRemindedPath = sessionStatePath(stateDirectory, hookInput.session_id, projectRoot, 'deletions');
+    const deletionsAlreadyReminded = new Set((readStateText(deletionsRemindedPath) || '').split('\n').filter(Boolean));
+    const pendingFilesToRemind = pendingFiles.filter((pendingFile) => !(pendingFile.isDeleted && deletionsAlreadyReminded.has(pendingFile.path)));
     const pendingMemories = listRecentMemories(
       memoryDirectoriesFor([hookInput.cwd, projectRoot], homeDirectory),
       sessionStartMilliseconds,
       bundleUpdatedMilliseconds,
     );
-    if (!pendingFiles.length && !pendingMemories.length) return bundleChangedInSession ? checkBundleValidity(validityContext) : allowDecision();
+    if (!pendingFilesToRemind.length && !pendingMemories.length) return bundleChangedInSession ? checkBundleValidity(validityContext) : allowDecision();
 
-    const pendingSignature = [...pendingFiles.map((pendingFile) => pendingFile.signature),
+    const pendingSignature = [...pendingFilesToRemind.map((pendingFile) => pendingFile.signature),
       ...pendingMemories.map((pendingMemory) => `${pendingMemory.name}:${Math.floor(pendingMemory.modifiedMilliseconds)}`)].sort().join('\n');
     const remindedPath = sessionStatePath(stateDirectory, hookInput.session_id, projectRoot, 'reminded');
     const pendingFingerprint = shortHash(pendingSignature);
     if (readStateText(remindedPath) === pendingFingerprint) return bundleChangedInSession ? checkBundleValidity(validityContext) : allowDecision();
     writeStateText(remindedPath, pendingFingerprint);
+    const newlyRemindedDeletions = pendingFilesToRemind.filter((pendingFile) => pendingFile.isDeleted).map((pendingFile) => pendingFile.path);
+    if (newlyRemindedDeletions.length) writeStateText(deletionsRemindedPath, [...deletionsAlreadyReminded, ...newlyRemindedDeletions].join('\n'));
 
     const specVersion = readBundleSpecVersion(indexText);
-    return blockDecision(MODULE_ID, buildUpkeepReminder(bundleRelativePath, specVersion, pendingFiles, pendingMemories));
+    return blockDecision(MODULE_ID, buildUpkeepReminder(bundleRelativePath, specVersion, pendingFilesToRemind, pendingMemories));
   },
 };

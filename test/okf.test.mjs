@@ -264,3 +264,17 @@ test('okf-upkeep: a deleted file is asked about once, not on every stop', () => 
   assert.equal(stopSession(projectRoot, options), null);
   assert.equal(stopSession(projectRoot, options), null);
 });
+
+test('okf-upkeep: a deleted file does not ride along later reminders', () => {
+  const projectRoot = createRepoWithBundle();
+  const options = hookOptions();
+  startSession(projectRoot, options);
+  execFileSync('rm', [join(projectRoot, 'src', 'app.py')]);
+  assert.match(stopSession(projectRoot, options).reason, /src\/app\.py \(deleted\)/);
+  const memoryDirectory = join(options.homeDirectory, '.claude', 'projects', projectRoot.replace(/[/.]/g, '-'), 'memory');
+  mkdirSync(memoryDirectory, { recursive: true });
+  writeFileSync(join(memoryDirectory, 'project_finding.md'), '---\nname: finding\n---\nA fact.\n');
+  const laterReminder = stopSession(projectRoot, options).reason;
+  assert.match(laterReminder, /project_finding\.md/);
+  assert.doesNotMatch(laterReminder, /app\.py/);
+});
