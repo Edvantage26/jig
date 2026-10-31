@@ -182,3 +182,73 @@ test('okf-upkeep: outside a git repo it fails open', () => {
   assert.equal(stopOutput, null);
   assert.ok(existsSync(join(projectRoot, '.okf', 'index.md')));
 });
+
+const BROKEN_CONCEPT = '---\ntitle: No type here\n---\nA concept without `type` is an OKF error.\n';
+
+test('validation: a bundle edited in the session with an ERROR blocks with the errors', () => {
+  const projectRoot = createRepoWithBundle();
+  const options = hookOptions();
+  startSession(projectRoot, options);
+  writeFileSync(join(projectRoot, '.okf', 'broken.md'), BROKEN_CONCEPT);
+  const stopOutput = stopSession(projectRoot, options);
+  assert.equal(stopOutput.decision, 'block');
+  assert.match(stopOutput.reason, /validator reports 1 ERROR/);
+  assert.match(stopOutput.reason, /broken\.md/);
+  assert.equal(stopSession(projectRoot, options), null, 'the same errors are not reported twice');
+});
+
+test('validation: runs even when the agent was already stopped once (stop_hook_active)', () => {
+  const projectRoot = createRepoWithBundle();
+  const options = hookOptions();
+  startSession(projectRoot, options);
+  writeFileSync(join(projectRoot, '.okf', 'broken.md'), BROKEN_CONCEPT);
+  assert.equal(stopSession(projectRoot, options, { stop_hook_active: true }).decision, 'block');
+});
+
+test('validation: v0.1 legacy warnings never block', () => {
+  const projectRoot = createRepoWithBundle({ indexText: V01_INDEX });
+  const options = hookOptions();
+  startSession(projectRoot, options);
+  writeFileSync(join(projectRoot, '.okf', 'overview.md'), "---\ntype: Overview\ntimestamp: '2026-01-01T00:00:00Z'\n---\nUpdated.\n");
+  assert.equal(stopSession(projectRoot, options), null);
+});
+
+test('validation: an untouched bundle is not validated', () => {
+  const projectRoot = createRepoWithBundle();
+  writeFileSync(join(projectRoot, '.okf', 'broken.md'), BROKEN_CONCEPT);
+  setModifiedSeconds(join(projectRoot, '.okf', 'broken.md'), 1_000_000);
+  const options = hookOptions();
+  startSession(projectRoot, options);
+  assert.equal(stopSession(projectRoot, options), null);
+});
+
+test('validation: the upkeep reminder comes first, validation on the next stop', () => {
+  const projectRoot = createRepoWithBundle();
+  const options = hookOptions();
+  startSession(projectRoot, options);
+  writeFileSync(join(projectRoot, 'src', 'app.py'), 'print(2)\n');
+  assert.match(stopSession(projectRoot, options).reason, /left knowledge newer/);
+  writeFileSync(join(projectRoot, '.okf', 'broken.md'), BROKEN_CONCEPT);
+  assert.match(stopSession(projectRoot, options, { stop_hook_active: true }).reason, /validator reports 1 ERROR/);
+});
+
+test('validation: at most three validation blocks per session', () => {
+  const projectRoot = createRepoWithBundle();
+  const options = hookOptions();
+  startSession(projectRoot, options);
+  for (let attemptNumber = 1; attemptNumber <= 3; attemptNumber += 1) {
+    writeFileSync(join(projectRoot, '.okf', `broken-${attemptNumber}.md`), BROKEN_CONCEPT);
+    assert.equal(stopSession(projectRoot, options, { stop_hook_active: true }).decision, 'block', `attempt ${attemptNumber}`);
+  }
+  writeFileSync(join(projectRoot, '.okf', 'broken-4.md'), BROKEN_CONCEPT);
+  assert.equal(stopSession(projectRoot, options, { stop_hook_active: true }), null);
+});
+
+test('validation: without python3 it fails open', () => {
+  const projectRoot = createRepoWithBundle();
+  const options = hookOptions();
+  options.environment.JIG_PYTHON = 'python3-that-does-not-exist';
+  startSession(projectRoot, options);
+  writeFileSync(join(projectRoot, '.okf', 'broken.md'), BROKEN_CONCEPT);
+  assert.equal(stopSession(projectRoot, options), null);
+});

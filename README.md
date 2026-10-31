@@ -83,7 +83,7 @@ runs the `jig` CLI, so the result is merged and validated, not improvised).
 |---|---|---|---|
 | `brief`: tells the agent at session start which harness runs here | core | SessionStart | works |
 | `okf-index`: loads the knowledge bundle index and its maintenance rules | okf | SessionStart | works |
-| `okf-upkeep`: asks to update the bundle after changes or new memories, once per change set | okf | Stop | works |
+| `okf-upkeep`: asks to update the bundle after changes or new memories (once per change set), and runs the OKF validator itself when the bundle changed, blocking only on errors | okf | Stop | works |
 | `danger`: confirms or refuses `git reset --hard`, force push, `rm -rf`, `--no-verify`, `DROP TABLE`... | danger | PreToolUse | works |
 | `/jig:init` + `jig` CLI (`jig status`, `jig init`) | — | — | works |
 | OKF toolkit skills and agents (from `packs/okf`) | okf | — | works |

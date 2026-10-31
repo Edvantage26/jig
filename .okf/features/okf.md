@@ -5,7 +5,7 @@ description: Project knowledge in an OKF bundle - index at session start, upkeep
 tags: [okf, knowledge, hooks, skills]
 generated:
   by: claude-code/claude-opus-5-5
-  at: '2026-10-31T16:30:00Z'
+  at: '2026-10-31T17:30:00Z'
 sources:
   - id: okf-index
     resource: src/okf/okf-index.mjs
@@ -28,15 +28,22 @@ sources:
   modified after the newest bundle file, or project memories (`~/.claude/projects/<path>/memory/*.md`,
   not `MEMORY.md`) written in the session. Asks once per set of pending changes (fingerprint in the
   session state). `.claude/settings.json`, `settings.local.json` and `harness.json` never count.
-  `stop_hook_active` never blocks.
+- **Validation gate (Stop, same module):** when the bundle was changed in the session, the hook
+  runs the bundled validator itself (`python3 packs/okf/.../okf_validate.py --json`, ~0.2 s on a
+  45-concept bundle) and blocks only on ERRORS, listing them; warnings (e.g. v0.1 legacy) never
+  block. It also runs when `stop_hook_active` is set (the agent was just asked to update the
+  bundle), which is exactly when it matters; the upkeep reminder itself is not repeated then.
+  Loop guards: the same errors are reported once, and at most 3 validation blocks per session.
+  Without `python3` it fails open (message on stderr).
 - **Rules given to the agent:** update the concept and `generated: { by: claude-code/<model>, at }`
   with the real current UTC time; `log.md` only for lifecycle events; validate with `/jig:validate`
   and fix errors. On a v0.1 bundle: legacy warnings are expected, the agent must not migrate the
   bundle, and in each concept it edits it replaces `timestamp` with `generated`.
 - **Field test (2026-10-31, copy of a real v0.1 bundle):** after a code change the agent updated the
   right concept and left `log.md` alone, but kept `timestamp` next to `generated`, invented the time
-  and skipped `/jig:validate`; the first two led to the stricter rules above. Running the validator
-  from the Stop hook itself is a planned improvement.
+  and skipped `/jig:validate`. The first two led to the stricter rules above; the third to the
+  validation gate. Verified in a real session: an agent wrote a concept without `type`, the hook
+  blocked with the error, the agent fixed it.
 
 # Skills and agents
 

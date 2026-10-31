@@ -5,7 +5,7 @@ description: One entry point per hook event that loads harness.json and runs the
 tags: [hooks, runtime, modules]
 generated:
   by: claude-code/claude-opus-5-5
-  at: '2026-10-31T12:00:00Z'
+  at: '2026-10-31T17:30:00Z'
 ---
 
 # Flow
@@ -52,7 +52,7 @@ See [features](features.md), [okf feature](/features/okf.md), [danger guard](/gu
 
 # Verified
 
-- `npm test`: 87 tests on 2026-10-31 (65 on 2026-10-30) (parser, rules, config, dispatcher, entry point, manifests).
+- `npm test`: 94 tests on 2026-10-31 (65 on 2026-10-30) (parser, rules, config, dispatcher, entry point, manifests).
 - Real Claude Code sessions with `--plugin-dir` (2026-10-30): SessionStart brief injected;
   `git reset --hard` stopped by `ask` (headless = refused, work kept); `git commit --no-verify`
   refused by `deny`. Headless `claude -p` on the dev server needs the account wrapper for auth.
