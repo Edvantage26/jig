@@ -151,6 +151,22 @@
               "additionalProperties": false
             }
           ]
+        },
+        "okf-recall": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
         }
       }
     }

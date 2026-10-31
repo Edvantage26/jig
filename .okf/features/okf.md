@@ -5,7 +5,7 @@ description: Project knowledge in an OKF bundle - index at session start, upkeep
 tags: [okf, knowledge, hooks, skills]
 generated:
   by: claude-code/claude-opus-5-5
-  at: '2026-10-31T19:30:00Z'
+  at: '2026-10-31T20:00:00Z'
 sources:
   - id: okf-index
     resource: src/okf/okf-index.mjs
@@ -23,6 +23,13 @@ sources:
 - **okf-index (SessionStart):** reads `<knowledge>/index.md` (default `.okf`), injects it (up to
   12,000 characters) with the maintenance rules, and records the HEAD at session start in the
   session state. Without a bundle it suggests creating one with `/jig:okf`.
+- **okf-recall (UserPromptSubmit):** on every message from the person, ranks the bundle concepts
+  against it (keywords without accents, 6-letter prefixes so plurals match; weights: title/tags 3,
+  description/path 2, body 1, body words present in >40% of concepts ignored) and adds the top 5
+  with score >= 3 to the agent's context, asking it to read the relevant ones first. Messages with
+  fewer than 2 meaningful words and slash commands add nothing. ~25 ms on a 46-concept bundle.
+  Reason: field data showed the agent consulted the bundle on only part of the messages once the
+  session-start index was far behind in a long conversation.
 - **okf-upkeep (Stop):** blocks finishing when the session left knowledge newer than the last
   bundle update: repo files changed since the session's base HEAD (tracked diff + untracked)
   modified after the newest bundle file, or project memories (`~/.claude/projects/<path>/memory/*.md`,

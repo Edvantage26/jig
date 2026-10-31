@@ -343,3 +343,49 @@ test('memories: the transcript scan is incremental and picks up appended writes'
   assert.deepEqual([...listMemoryFilesWrittenBySession(transcriptPath, [memoryDirectory], scanState)].sort(), [firstPath, secondPath].sort());
   assert.ok(scanState.offset < statSync(transcriptPath).size, 'an incomplete last line is left for the next scan');
 });
+
+function writeConcept(projectRoot, relativePath, frontmatterLines, bodyText) {
+  const conceptPath = join(projectRoot, '.okf', relativePath);
+  mkdirSync(join(conceptPath, '..'), { recursive: true });
+  writeFileSync(conceptPath, `---\n${frontmatterLines.join('\n')}\n---\n${bodyText}\n`);
+}
+
+function sendPrompt(projectRoot, options, promptText) {
+  return runHookEvent('UserPromptSubmit', { session_id: 'session-1', cwd: projectRoot, prompt: promptText }, options);
+}
+
+function createRecallRepo() {
+  const projectRoot = createRepoWithBundle();
+  writeConcept(projectRoot, 'extraction/masks.md', ['type: Component', 'title: Máscara', 'description: Configuración de extracción por remitente.', 'tags: [extraction, mask]'], 'Cada plantilla de pedido guarda columnas. Gastrohub lee la cantidad en la columna Quantitat.');
+  writeConcept(projectRoot, 'integrations/seidor.md', ['type: Integration', 'title: Seidor y SAP', 'description: Envío de pedidos a SAP.', 'tags:', '  - integration', '  - sap'], 'Los pedidos llegan a SAP por Seidor.');
+  writeConcept(projectRoot, 'operations/deploy.md', ['type: Runbook', 'title: Despliegue', 'description: Cómo se despliega.'], 'Dokploy.');
+  return projectRoot;
+}
+
+test('okf-recall: a message gets the related concepts, best first', () => {
+  const projectRoot = createRecallRepo();
+  const recallText = sendPrompt(projectRoot, hookOptions(), '¿Por qué la plantilla de Gastrohub no lee la cantidad?').hookSpecificOutput.additionalContext;
+  assert.match(recallText, /^jig\/okf-recall: OKF concepts related to this request|OKF concepts related to this request/);
+  assert.match(recallText, /\.okf\/extraction\/masks\.md — Máscara: Configuración de extracción por remitente\./);
+  assert.doesNotMatch(recallText, /seidor\.md/);
+});
+
+test('okf-recall: accents, plurals and block-list tags still match', () => {
+  const projectRoot = createRecallRepo();
+  const recallText = sendPrompt(projectRoot, hookOptions(), 'mira como llegan los pedidos a SAP por Seidor').hookSpecificOutput.additionalContext;
+  assert.match(recallText, /integrations\/seidor\.md/);
+});
+
+test('okf-recall: short or unrelated messages and slash commands add nothing', () => {
+  const projectRoot = createRecallRepo();
+  const options = hookOptions();
+  assert.equal(sendPrompt(projectRoot, options, 'sí, adelante'), null);
+  assert.equal(sendPrompt(projectRoot, options, 'cuéntame un chiste sobre gatos'), null);
+  assert.equal(sendPrompt(projectRoot, options, '/jig:validate .okf'), null);
+});
+
+test('okf-recall: switched off with the okf feature', () => {
+  const projectRoot = createRecallRepo();
+  writeFileSync(join(projectRoot, '.claude', 'jig.json'), JSON.stringify({ features: { okf: false } }));
+  assert.equal(sendPrompt(projectRoot, hookOptions(), '¿Por qué la plantilla de Gastrohub no lee la cantidad?'), null);
+});

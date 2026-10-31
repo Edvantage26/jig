@@ -5,7 +5,7 @@ description: One entry point per hook event that loads jig.json and runs the ena
 tags: [hooks, runtime, modules]
 generated:
   by: claude-code/claude-opus-5-5
-  at: '2026-10-31T17:30:00Z'
+  at: '2026-10-31T20:00:00Z'
 ---
 
 # Flow
@@ -45,6 +45,7 @@ decide. Garbage input makes the entry point exit 0 with no output.
 |---|---|---|
 | `brief` | SessionStart | core (always on) |
 | `okf-index` | SessionStart | okf |
+| `okf-recall` | UserPromptSubmit | okf |
 | `danger` | PreToolUse (Bash) | danger |
 | `okf-upkeep` | Stop | okf |
 

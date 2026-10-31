@@ -6,7 +6,7 @@ export const FEATURES = [
   {
     id: 'okf',
     title: 'OKF project knowledge',
-    description: 'Loads the knowledge bundle index at session start and asks to keep it up to date after changes. Skills: /jig:okf, /jig:validate, /jig:visualize, /jig:backfill.',
+    description: 'Loads the knowledge bundle index at session start, points to the concepts related to each message, and asks to keep the bundle up to date after changes. Skills: /jig:okf, /jig:validate, /jig:visualize, /jig:backfill.',
     enabledByDefault: true,
   },
   {

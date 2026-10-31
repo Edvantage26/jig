@@ -8,8 +8,9 @@ import briefContext from '../context/brief.mjs';
 import dangerGuard from '../guards/danger.mjs';
 import okfIndexContext from '../okf/okf-index.mjs';
 import okfUpkeepGate from '../okf/okf-upkeep.mjs';
+import okfRecallContext from '../okf/okf-recall.mjs';
 
-export const ALL_MODULES = [briefContext, okfIndexContext, dangerGuard, okfUpkeepGate];
+export const ALL_MODULES = [briefContext, okfIndexContext, okfRecallContext, dangerGuard, okfUpkeepGate];
 
 export const KNOWN_MODULE_IDS = ALL_MODULES.map((moduleDefinition) => moduleDefinition.id);
 

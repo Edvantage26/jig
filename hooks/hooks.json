@@ -35,6 +35,17 @@
           }
         ]
       }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/bin/jig-hook.mjs\" UserPromptSubmit",
+            "timeout": 10
+          }
+        ]
+      }
     ]
   }
 }
