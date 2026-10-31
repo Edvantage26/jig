@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, writeFileSync, utimesSync, existsSync, readdirSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, writeFileSync, utimesSync, existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { runHookEvent } from '../src/core/dispatcher.mjs';
@@ -147,7 +147,7 @@ test('okf-upkeep: a project memory saved in the session asks to move it to the b
   startSession(projectRoot, options);
   const memoryDirectory = join(options.homeDirectory, '.claude', 'projects', projectRoot.replace(/[/.]/g, '-'), 'memory');
   mkdirSync(memoryDirectory, { recursive: true });
-  writeFileSync(join(memoryDirectory, 'project_finding.md'), '---\nname: finding\n---\nA fact.\n');
+  writeFileSync(join(memoryDirectory, 'project_finding.md'), '---\nname: finding\nmetadata:\n  originSessionId: session-1\n---\nA fact.\n');
   writeFileSync(join(memoryDirectory, 'MEMORY.md'), '- index\n');
   const stopOutput = stopSession(projectRoot, options);
   assert.equal(stopOutput.decision, 'block');
@@ -273,8 +273,73 @@ test('okf-upkeep: a deleted file does not ride along later reminders', () => {
   assert.match(stopSession(projectRoot, options).reason, /src\/app\.py \(deleted\)/);
   const memoryDirectory = join(options.homeDirectory, '.claude', 'projects', projectRoot.replace(/[/.]/g, '-'), 'memory');
   mkdirSync(memoryDirectory, { recursive: true });
-  writeFileSync(join(memoryDirectory, 'project_finding.md'), '---\nname: finding\n---\nA fact.\n');
+  writeFileSync(join(memoryDirectory, 'project_finding.md'), '---\nname: finding\nmetadata:\n  originSessionId: session-1\n---\nA fact.\n');
   const laterReminder = stopSession(projectRoot, options).reason;
   assert.match(laterReminder, /project_finding\.md/);
   assert.doesNotMatch(laterReminder, /app\.py/);
+});
+
+function memoryDirectoryFor(projectRoot, options) {
+  const memoryDirectory = join(options.homeDirectory, '.claude', 'projects', projectRoot.replace(/[/.]/g, '-'), 'memory');
+  mkdirSync(memoryDirectory, { recursive: true });
+  return memoryDirectory;
+}
+
+function writeTranscript(options, writtenPaths) {
+  const transcriptPath = join(options.homeDirectory, 'transcript.jsonl');
+  const transcriptLines = writtenPaths.map((writtenPath) => JSON.stringify({
+    type: 'assistant',
+    message: { content: [{ type: 'tool_use', name: 'Write', input: { file_path: writtenPath, content: 'x' } }] },
+  }));
+  writeFileSync(transcriptPath, `${transcriptLines.join('\n')}\n`);
+  return transcriptPath;
+}
+
+test('memories: a memory written by another session is not this session\'s to move', () => {
+  const projectRoot = createRepoWithBundle();
+  const options = hookOptions();
+  startSession(projectRoot, options);
+  const memoryDirectory = memoryDirectoryFor(projectRoot, options);
+  writeFileSync(join(memoryDirectory, 'project_other.md'), '---\nname: other\nmetadata:\n  originSessionId: another-session\n---\nTheirs.\n');
+  assert.equal(stopSession(projectRoot, options), null);
+});
+
+test('memories: the transcript decides which memories this session wrote', () => {
+  const projectRoot = createRepoWithBundle();
+  const options = hookOptions();
+  startSession(projectRoot, options);
+  const memoryDirectory = memoryDirectoryFor(projectRoot, options);
+  const ownMemoryPath = join(memoryDirectory, 'project_own.md');
+  writeFileSync(ownMemoryPath, '---\nname: own\n---\nMine, created by another session originally.\n'.replace('---\nname', '---\nmetadata:\n  originSessionId: another-session\nname'));
+  writeFileSync(join(memoryDirectory, 'project_theirs.md'), '---\nname: theirs\nmetadata:\n  originSessionId: session-1\n---\nNot written in this transcript.\n');
+  const transcriptPath = writeTranscript(options, [ownMemoryPath]);
+  const stopOutput = stopSession(projectRoot, options, { transcript_path: transcriptPath });
+  assert.equal(stopOutput.decision, 'block');
+  assert.match(stopOutput.reason, /project_own\.md/);
+  assert.doesNotMatch(stopOutput.reason, /project_theirs\.md/);
+});
+
+test('memories: without transcript or origin, a memory does not count', () => {
+  const projectRoot = createRepoWithBundle();
+  const options = hookOptions();
+  startSession(projectRoot, options);
+  writeFileSync(join(memoryDirectoryFor(projectRoot, options), 'project_unknown.md'), '---\nname: unknown\n---\nWho wrote it?\n');
+  assert.equal(stopSession(projectRoot, options), null);
+});
+
+test('memories: the transcript scan is incremental and picks up appended writes', async () => {
+  const { listMemoryFilesWrittenBySession } = await import('../src/okf/okf-upkeep.mjs');
+  const options = hookOptions();
+  const memoryDirectory = join(options.homeDirectory, 'memory');
+  const firstPath = join(memoryDirectory, 'first.md');
+  const secondPath = join(memoryDirectory, 'second.md');
+  const transcriptPath = writeTranscript(options, [firstPath]);
+  const scanState = { offset: 0, paths: [] };
+  assert.deepEqual([...listMemoryFilesWrittenBySession(transcriptPath, [memoryDirectory], scanState)], [firstPath]);
+  const offsetAfterFirstScan = scanState.offset;
+  assert.ok(offsetAfterFirstScan > 0);
+  const appendedLine = JSON.stringify({ type: 'assistant', message: { content: [{ type: 'tool_use', name: 'Edit', input: { file_path: secondPath } }] } });
+  writeFileSync(transcriptPath, `${readFileSync(transcriptPath, 'utf8')}${appendedLine}\n{"partial": `);
+  assert.deepEqual([...listMemoryFilesWrittenBySession(transcriptPath, [memoryDirectory], scanState)].sort(), [firstPath, secondPath].sort());
+  assert.ok(scanState.offset < statSync(transcriptPath).size, 'an incomplete last line is left for the next scan');
 });

@@ -7,7 +7,7 @@
 //      Warnings never block; a missing python3 fails open.
 
 import { execFileSync } from 'node:child_process';
-import { existsSync, readdirSync, statSync } from 'node:fs';
+import { closeSync, existsSync, openSync, readFileSync, readSync, readdirSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -47,13 +47,80 @@ export function memoryDirectoriesFor(directoryPaths, homeDirectory = homedir()) 
     .map((directoryPath) => join(homeDirectory, '.claude', 'projects', directoryPath.replace(/[/.]/g, '-'), 'memory'));
 }
 
-function listRecentMemories(memoryDirectories, sessionStartMilliseconds, bundleUpdatedMilliseconds) {
+const MEMORY_WRITING_TOOLS = new Set(['Write', 'Edit', 'MultiEdit', 'NotebookEdit']);
+
+// Memory files this session wrote, read from its own transcript (Write/Edit tool calls). Returns
+// null when the transcript is not available, so the caller can fall back to the frontmatter.
+// Transcripts grow to tens of MB, so the scan is incremental: `scanState` keeps the byte offset
+// already read and the paths found, and each call only reads what was appended since.
+export function listMemoryFilesWrittenBySession(transcriptPath, memoryDirectories, scanState = { offset: 0, paths: [] }) {
+  if (!transcriptPath || !existsSync(transcriptPath)) return null;
+  const writtenMemoryPaths = new Set(scanState.paths);
+  const transcriptSize = statSync(transcriptPath).size;
+  const startOffset = scanState.offset <= transcriptSize ? scanState.offset : 0;
+  const transcriptDescriptor = openSync(transcriptPath, 'r');
+  let appendedText;
+  try {
+    const appendedBytes = Buffer.alloc(transcriptSize - startOffset);
+    readSync(transcriptDescriptor, appendedBytes, 0, appendedBytes.length, startOffset);
+    appendedText = appendedBytes.toString('utf8');
+  } finally {
+    closeSync(transcriptDescriptor);
+  }
+  // Only complete lines are read; a line still being written is picked up next time.
+  const lastNewlineIndex = appendedText.lastIndexOf('\n');
+  const completeText = lastNewlineIndex >= 0 ? appendedText.slice(0, lastNewlineIndex + 1) : '';
+  for (const memoryDirectory of memoryDirectories) {
+    let matchIndex = completeText.indexOf(memoryDirectory);
+    while (matchIndex >= 0) {
+      const lineStart = completeText.lastIndexOf('\n', matchIndex) + 1;
+      const lineEnd = completeText.indexOf('\n', matchIndex);
+      try {
+        const transcriptEvent = JSON.parse(completeText.slice(lineStart, lineEnd));
+        for (const contentBlock of transcriptEvent?.message?.content || []) {
+          const writtenPath = contentBlock?.input?.file_path;
+          if (contentBlock?.type === 'tool_use' && MEMORY_WRITING_TOOLS.has(contentBlock.name) && typeof writtenPath === 'string') writtenMemoryPaths.add(writtenPath);
+        }
+      } catch {
+        // Not a JSON event line: ignore.
+      }
+      matchIndex = completeText.indexOf(memoryDirectory, lineEnd);
+    }
+  }
+  scanState.offset = startOffset + Buffer.byteLength(completeText, 'utf8');
+  scanState.paths = [...writtenMemoryPaths];
+  return writtenMemoryPaths;
+}
+
+function readMemoryOriginSession(memoryFilePath) {
+  const frontmatterMatch = /^---\n([\s\S]*?)\n---/.exec(readFileSync(memoryFilePath, 'utf8'));
+  const originMatch = frontmatterMatch && /^\s*originSessionId:\s*['"]?([\w-]+)['"]?\s*$/m.exec(frontmatterMatch[1]);
+  return originMatch ? originMatch[1] : null;
+}
+
+// Only memories this session wrote count: other sessions open on the same repo write to the same
+// memory folder, and their knowledge is theirs to move to the bundle. The transcript says which
+// files this session wrote; without it, the frontmatter's originSessionId decides.
+function listRecentMemories(memoryDirectories, sessionStartMilliseconds, bundleUpdatedMilliseconds, sessionId, transcriptPath, scanStatePath) {
   const recentMemories = [];
+  let scanState = { offset: 0, paths: [] };
+  try {
+    scanState = { ...scanState, ...JSON.parse(readStateText(scanStatePath) || '{}') };
+  } catch {
+    // Corrupt state: rescan from the start.
+  }
+  const sessionWrittenMemoryPaths = listMemoryFilesWrittenBySession(transcriptPath, memoryDirectories, scanState);
+  if (sessionWrittenMemoryPaths) writeStateText(scanStatePath, JSON.stringify(scanState));
   for (const memoryDirectory of memoryDirectories) {
     if (!existsSync(memoryDirectory)) continue;
     for (const memoryFileName of readdirSync(memoryDirectory)) {
       if (!memoryFileName.endsWith('.md') || memoryFileName === 'MEMORY.md') continue;
-      const memoryMilliseconds = statSync(join(memoryDirectory, memoryFileName)).mtimeMs;
+      const memoryFilePath = join(memoryDirectory, memoryFileName);
+      const isWrittenBySession = sessionWrittenMemoryPaths
+        ? sessionWrittenMemoryPaths.has(memoryFilePath)
+        : readMemoryOriginSession(memoryFilePath) === sessionId;
+      if (!isWrittenBySession) continue;
+      const memoryMilliseconds = statSync(memoryFilePath).mtimeMs;
       if (memoryMilliseconds >= sessionStartMilliseconds && memoryMilliseconds > bundleUpdatedMilliseconds) {
         recentMemories.push({ name: memoryFileName, modifiedMilliseconds: memoryMilliseconds });
       }
@@ -175,6 +242,9 @@ export default {
       memoryDirectoriesFor([hookInput.cwd, projectRoot], homeDirectory),
       sessionStartMilliseconds,
       bundleUpdatedMilliseconds,
+      hookInput.session_id,
+      hookInput.transcript_path,
+      sessionStatePath(stateDirectory, hookInput.session_id, projectRoot, 'memory-scan'),
     );
     if (!pendingFilesToRemind.length && !pendingMemories.length) return bundleChangedInSession ? checkBundleValidity(validityContext) : allowDecision();
 

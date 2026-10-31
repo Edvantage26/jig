@@ -5,7 +5,7 @@ description: Project knowledge in an OKF bundle - index at session start, upkeep
 tags: [okf, knowledge, hooks, skills]
 generated:
   by: claude-code/claude-opus-5-5
-  at: '2026-10-31T17:30:00Z'
+  at: '2026-10-31T19:30:00Z'
 sources:
   - id: okf-index
     resource: src/okf/okf-index.mjs
@@ -26,7 +26,11 @@ sources:
 - **okf-upkeep (Stop):** blocks finishing when the session left knowledge newer than the last
   bundle update: repo files changed since the session's base HEAD (tracked diff + untracked)
   modified after the newest bundle file, or project memories (`~/.claude/projects/<path>/memory/*.md`,
-  not `MEMORY.md`) written in the session. Asks once per set of pending changes (fingerprint in the
+  not `MEMORY.md`) written **by this session**: the hook reads the session transcript
+  (`transcript_path`, Write/Edit calls; incremental scan with the byte offset in the session state,
+  ~0.5 s once on a 33 MB transcript, then ~0.15 s per stop) and, without a transcript, the memory's
+  `originSessionId`. Other sessions open on the same repo share the memory folder; their memories
+  are theirs to move. A deleted file is mentioned once per session. Asks once per set of pending changes (fingerprint in the
   session state). `.claude/settings.json`, `settings.local.json` and `jig.json` never count.
 - **Validation gate (Stop, same module):** when the bundle was changed in the session, the hook
   runs the bundled validator itself (`python3 packs/okf/.../okf_validate.py --json`, ~0.2 s on a
