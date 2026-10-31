@@ -1,0 +1,13 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Edvantage26/jig/main/schema/harness.schema.json",
+  "version": 1,
+  "features": {
+    "okf": true,
+    "danger": true
+  },
+  "trunk": "main",
+  "verify": [
+    "npm test"
+  ],
+  "knowledge": ".okf"
+}

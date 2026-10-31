@@ -1,9 +1,11 @@
 // Writes the per-repo harness: .claude/harness.json (features and contract) and
 // .claude/settings.json (enables jig for whoever opens the repo). Both files are merged with what
 // already exists, so running it again only changes what the person chose.
+// Overrides that only make sense on this machine (switching off the person's own standalone OKF
+// plugin) go to .claude/settings.local.json, which is personal and kept out of git.
 
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { FEATURES, KNOWN_FEATURE_IDS, isFeatureEnabled } from '../core/features.mjs';
@@ -52,6 +54,20 @@ export function findOtherOkfPlugins(userSettings) {
     .map(([pluginId]) => pluginId);
 }
 
+// Makes sure the repo itself ignores .claude/settings.local.json before jig writes into it.
+// A rule from the person's global git excludes does not count: a teammate's clone would not have it.
+export function ensureLocalSettingsIgnored(repoRoot) {
+  const ignoreMatch = runGit(repoRoot, ['check-ignore', '-v', '.claude/settings.local.json']);
+  const ignoreSourcePath = ignoreMatch.split(':')[0];
+  const isIgnoredByRepoRule = Boolean(ignoreSourcePath) && !ignoreSourcePath.startsWith('/') && !ignoreSourcePath.startsWith('.git/');
+  if (isIgnoredByRepoRule) return false;
+  const gitignorePath = join(repoRoot, '.gitignore');
+  const gitignoreText = existsSync(gitignorePath) ? readFileSync(gitignorePath, 'utf8') : '';
+  const separator = gitignoreText && !gitignoreText.endsWith('\n') ? '\n' : '';
+  appendFileSync(gitignorePath, `${separator}.claude/settings.local.json\n`);
+  return true;
+}
+
 export function describeRepo(repoRoot) {
   const harnessConfig = readJsonFile(join(repoRoot, '.claude', 'harness.json'));
   const knowledgePath = harnessConfig?.knowledge || '.okf';
@@ -98,18 +114,24 @@ export function setupRepo(repoRoot, { enabledFeatureIds, verifyCommands, knowled
   const projectSettings = readJsonFile(settingsPath) || {};
   projectSettings.extraKnownMarketplaces = { ...projectSettings.extraKnownMarketplaces, jig: JIG_MARKETPLACE };
   projectSettings.enabledPlugins = { ...projectSettings.enabledPlugins, [JIG_PLUGIN_ID]: true };
-  const disabledPlugins = [];
-  if (chosenFeatures.okf) {
-    for (const otherPluginId of findOtherOkfPlugins(readJsonFile(userSettingsPath))) {
-      projectSettings.enabledPlugins[otherPluginId] = false;
-      disabledPlugins.push(otherPluginId);
-    }
-  }
   writeJsonFile(settingsPath, projectSettings);
+
+  const disabledPlugins = chosenFeatures.okf ? findOtherOkfPlugins(readJsonFile(userSettingsPath)) : [];
+  const localSettingsPath = join(claudeDirectory, 'settings.local.json');
+  let gitignoreUpdated = false;
+  if (disabledPlugins.length) {
+    gitignoreUpdated = ensureLocalSettingsIgnored(repoRoot);
+    const localSettings = readJsonFile(localSettingsPath) || {};
+    localSettings.enabledPlugins = { ...localSettings.enabledPlugins };
+    for (const otherPluginId of disabledPlugins) localSettings.enabledPlugins[otherPluginId] = false;
+    writeJsonFile(localSettingsPath, localSettings);
+  }
 
   return {
     harnessPath,
     settingsPath,
+    localSettingsPath: disabledPlugins.length ? localSettingsPath : null,
+    gitignoreUpdated,
     features: chosenFeatures,
     trunk: harnessConfig.trunk,
     knowledge: harnessConfig.knowledge,

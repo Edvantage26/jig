@@ -54,12 +54,17 @@ test('setup keeps existing settings and harness fields', () => {
   assert.deepEqual(harnessConfig.features, { okf: false, danger: true });
 });
 
-test('with okf on, a standalone okf plugin is switched off in this repo only', () => {
+test('with okf on, a standalone okf plugin is switched off in the personal settings only', () => {
   const repoRoot = createGitRepo();
   const userSettingsPath = writeUserSettings({ 'okf@some-marketplace': true, 'okfish@x': true, 'okf@disabled': false });
   const setupResult = setupRepo(repoRoot, { enabledFeatureIds: ['okf'], userSettingsPath });
   assert.deepEqual(setupResult.disabledPlugins, ['okf@some-marketplace']);
-  assert.equal(readJson(join(repoRoot, '.claude', 'settings.json')).enabledPlugins['okf@some-marketplace'], false);
+  assert.equal(readJson(join(repoRoot, '.claude', 'settings.local.json')).enabledPlugins['okf@some-marketplace'], false);
+  assert.equal(readJson(join(repoRoot, '.claude', 'settings.json')).enabledPlugins['okf@some-marketplace'], undefined, 'shared settings stay clean');
+  assert.equal(setupResult.gitignoreUpdated, true);
+  assert.match(readFileSync(join(repoRoot, '.gitignore'), 'utf8'), /^\.claude\/settings\.local\.json$/m);
+  execFileSync('git', ['-C', repoRoot, 'check-ignore', '-q', '.claude/settings.local.json']);
+  assert.equal(setupRepo(repoRoot, { enabledFeatureIds: ['okf'], userSettingsPath }).gitignoreUpdated, false, 'not appended twice');
   const repoWithoutOkf = createGitRepo();
   assert.deepEqual(setupRepo(repoWithoutOkf, { enabledFeatureIds: ['danger'], userSettingsPath }).disabledPlugins, []);
 });

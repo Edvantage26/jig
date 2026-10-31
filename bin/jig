@@ -50,7 +50,7 @@ try {
       console.log(`wrote ${setupResult.harnessPath}`);
       console.log(`wrote ${setupResult.settingsPath}`);
       console.log(`features: ${Object.entries(setupResult.features).map(([featureId, isEnabled]) => `${featureId}=${isEnabled ? 'on' : 'off'}`).join(', ')}`);
-      if (setupResult.disabledPlugins.length) console.log(`disabled in this repo (duplicate OKF skills): ${setupResult.disabledPlugins.join(', ')}`);
+      if (setupResult.disabledPlugins.length) console.log(`disabled for you in this repo (duplicate OKF skills), in ${setupResult.localSettingsPath}: ${setupResult.disabledPlugins.join(', ')}${setupResult.gitignoreUpdated ? ' (added to .gitignore)' : ''}`);
       if (setupResult.features.okf && !setupResult.hasKnowledgeBundle) console.log(`no OKF bundle at ${setupResult.knowledge}/ yet: create it with /jig:okf (produce mode)`);
       console.log('Commit .claude/harness.json and .claude/settings.json, then restart the Claude Code session.');
     }

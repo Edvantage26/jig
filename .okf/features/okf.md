@@ -41,8 +41,8 @@ From the [OKF pack](/packs/okf-pack.md): `/jig:okf`, `/jig:validate`, `/jig:visu
 # Coexistence with a standalone OKF setup
 
 A machine may already have a standalone `okf@...` plugin and a global OKF guard hook. In a repo set
-up with `jig init` and `okf` on, the standalone plugin is disabled in the project settings (no
-duplicate skills), and a guard hook should skip repos that have `.claude/harness.json`. Verified in
+up with `jig init` and `okf` on, the standalone plugin is disabled in the personal
+`.claude/settings.local.json` (no duplicate skills, nothing committed), and a guard hook should skip repos that have `.claude/harness.json`. Verified in
 a real session on 2026-10-31: only `jig:*` skills listed, a single upkeep reminder.
 
 # State

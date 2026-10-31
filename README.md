@@ -138,8 +138,8 @@ Then run `/jig:init` in each repo. It commits nothing; commit `.claude/harness.j
 }
 ```
 
-If you already use a standalone OKF plugin (`okf@...`), `jig init` disables it in that repo so the
-OKF skills are not listed twice.
+If you already use a standalone OKF plugin (`okf@...`), `jig init` disables it for you in that repo,
+in `.claude/settings.local.json` (personal, git-ignored), so the OKF skills are not listed twice.
 
 ## Credits
 

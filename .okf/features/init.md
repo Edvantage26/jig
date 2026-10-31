@@ -26,8 +26,11 @@ sources:
     detected: origin/HEAD, then main/master, then current branch), `verify`, `knowledge`; other
     fields and `modules` are kept. The result is validated before writing.
   - `.claude/settings.json`: `extraKnownMarketplaces.jig` (github `Edvantage26/jig`) and
-    `enabledPlugins["jig@jig"] = true`; with `okf` on, every enabled user-level `okf@...` plugin
-    is set to `false` for this repo.
+    `enabledPlugins["jig@jig"] = true`. Shared and committed.
+  - `.claude/settings.local.json` (personal, not committed): with `okf` on, every enabled
+    user-level `okf@...` plugin is set to `false` for this repo, so its skills are not listed twice.
+    `.claude/settings.local.json` is added to `.gitignore` if git does not ignore it yet. Local
+    settings win over project and user settings.
 - **Skill `/jig:init`**: runs `jig status`, asks the features with a multi-select, runs
   `jig init`, offers `/jig:okf` when there is no bundle, and tells the person to commit and restart.
   It never commits.
