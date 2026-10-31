@@ -16,15 +16,12 @@ Run the deterministic conformance checker against the target bundle. Default to
 the project's `.okf/` directory when no path is given.
 
 ```bash
-uv run "${CLAUDE_SKILL_DIR}/scripts/okf_validate.py" $ARGUMENTS
-```
-
-If `uv` is unavailable, fall back to:
-
-```bash
-python3 -m pip install --quiet pyyaml && \
 python3 "${CLAUDE_SKILL_DIR}/scripts/okf_validate.py" $ARGUMENTS
 ```
+
+Needs only `python3` 3.9+: PyYAML ships in this repo's `vendor/`. If it reports
+`No module named 'yaml'` (the skill was installed without that folder), run
+`python3 -m pip install --quiet pyyaml` once.
 
 `${CLAUDE_SKILL_DIR}` resolves whether this skill runs as part of the `okf`
 plugin or is installed standalone (e.g. via `npx skills add`), so the checker is
@@ -68,7 +65,7 @@ a bundle the user has not asked to migrate. It is textual (comments, key order
 and quoting survive) and idempotent.
 
 ```bash
-uv run "${CLAUDE_SKILL_DIR}/scripts/okf_validate.py" .okf --migrate --strict
+python3 "${CLAUDE_SKILL_DIR}/scripts/okf_validate.py" .okf --migrate --strict
 ```
 
 It hoists `timestamp` to `generated: { by: process:okf-migrate, at }`, lifts a

@@ -21,7 +21,7 @@ replacements (`generated.at`, `sources`), never as errors (§13.1). `--migrate`
 performs that rewrite in place, textually, so `--strict` has a door and not just
 a wall.
 
-Run:  uv run scripts/okf_validate.py <bundle-dir>
+Run:  python3 scripts/okf_validate.py <bundle-dir>
         [--strict | --max-warnings N] [--migrate] [--json]
 """
 from __future__ import annotations
@@ -32,6 +32,11 @@ import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
+
+# Prefer the PyYAML bundled in vendor/ (repo root) so plain `python3` works without pip or uv.
+_VENDOR_DIRECTORY = Path(__file__).resolve().parents[3] / "vendor"
+if _VENDOR_DIRECTORY.is_dir():
+    sys.path.insert(0, str(_VENDOR_DIRECTORY))
 
 import yaml
 

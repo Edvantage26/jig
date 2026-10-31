@@ -21,15 +21,12 @@ install, no bundle content leaves the page. The viewer does need network
 access: cytoscape, marked and dompurify load from cdn.jsdelivr.net.
 
 ```bash
-uv run "${CLAUDE_SKILL_DIR}/scripts/okf_visualize.py" $ARGUMENTS
-```
-
-If `uv` is unavailable:
-
-```bash
-python3 -m pip install --quiet pyyaml && \
 python3 "${CLAUDE_SKILL_DIR}/scripts/okf_visualize.py" $ARGUMENTS
 ```
+
+Needs only `python3` 3.9+: PyYAML ships in this repo's `vendor/`. If it reports
+`No module named 'yaml'` (the skill was installed without that folder), run
+`python3 -m pip install --quiet pyyaml` once.
 
 The detail panel shows each concept's `type`, `description`, `tags`, `status`,
 `generated`, `verified`, `stale_after`, `sources` (with their credibility

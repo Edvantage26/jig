@@ -6,11 +6,11 @@
 
 Deterministic extraction: same input → byte-identical events.jsonl.
 
-Run:  uv run okf_backfill_events.py <repo-dir> [--out events.jsonl]
+Run:  python3 okf_backfill_events.py <repo-dir> [--out events.jsonl]
       [--branch REF ...] [--no-sessions] [--sessions-dir DIR] [--max-text 2000]
       [--skip-globs GLOB ...]
 
-      uv run okf_backfill_events.py <repo-dir> --show <sha> [--only <path>]
+      python3 okf_backfill_events.py <repo-dir> --show <sha> [--only <path>]
       [--max-diff-lines 300] [--per-file-lines 120] [--max-line-chars 400]
       [--skip-globs GLOB ...]
 """
@@ -24,7 +24,7 @@ import re
 import subprocess
 import sys
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 
@@ -125,7 +125,7 @@ def normalize_ts(ts: str) -> float:
 
 def epoch_to_iso_z(epoch: float) -> str:
     """Format a UTC epoch as ISO8601 with a Z suffix, second precision."""
-    return datetime.fromtimestamp(epoch, tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return datetime.fromtimestamp(epoch, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def git_log(repo_dir: Path, branches: list[str]) -> list[dict]:

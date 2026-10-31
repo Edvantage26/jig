@@ -101,7 +101,7 @@ the first files — it scaffolds a conformant `index.md`, `log.md`, and a
 `getting-started.md` concept with full recommended frontmatter in one shot:
 
 ```bash
-uv run "${CLAUDE_SKILL_DIR}/scripts/okf_init.py" <target-dir> [--title "..."]
+python3 "${CLAUDE_SKILL_DIR}/scripts/okf_init.py" <target-dir> [--title "..."]
 ```
 
 It refuses to touch a directory that already has `.md` files unless `--force`
@@ -152,7 +152,7 @@ Never eyeball conformance — run the deterministic checker. Invoke the companio
 checker. If that skill is not installed, run it directly:
 
 ```bash
-uv run "${CLAUDE_SKILL_DIR}/../validate/scripts/okf_validate.py" <bundle-dir> --strict
+python3 "${CLAUDE_SKILL_DIR}/../validate/scripts/okf_validate.py" <bundle-dir> --strict
 ```
 
 Resolve every `ERROR` (hard §11 failures). Under `--strict` warnings also fail
