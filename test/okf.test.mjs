@@ -19,8 +19,8 @@ function setModifiedSeconds(filePath, epochSeconds) {
 }
 
 // A committed repo with a bundle whose files are dated `bundleEpochSeconds`.
-function createRepoWithBundle({ indexText = V02_INDEX, harnessConfig = {}, bundleEpochSeconds = 1_000_000 } = {}) {
-  const projectRoot = createTemporaryProject(harnessConfig);
+function createRepoWithBundle({ indexText = V02_INDEX, jigConfig = {}, bundleEpochSeconds = 1_000_000 } = {}) {
+  const projectRoot = createTemporaryProject(jigConfig);
   mkdirSync(join(projectRoot, '.okf'));
   writeFileSync(join(projectRoot, '.okf', 'index.md'), indexText);
   writeFileSync(join(projectRoot, '.okf', 'overview.md'), '---\ntype: Overview\n---\nHello.\n');
@@ -78,7 +78,7 @@ test('okf enabled without a bundle suggests creating one', () => {
 });
 
 test('features.okf false turns both OKF modules off', () => {
-  const projectRoot = createRepoWithBundle({ harnessConfig: { features: { okf: false } } });
+  const projectRoot = createRepoWithBundle({ jigConfig: { features: { okf: false } } });
   const options = hookOptions();
   const contextText = startSession(projectRoot, options).hookSpecificOutput.additionalContext;
   assert.doesNotMatch(contextText, /OKF bundle/);
@@ -87,7 +87,7 @@ test('features.okf false turns both OKF modules off', () => {
 });
 
 test('a custom knowledge path is honoured', () => {
-  const projectRoot = createRepoWithBundle({ harnessConfig: { knowledge: 'docs/kb' } });
+  const projectRoot = createRepoWithBundle({ jigConfig: { knowledge: 'docs/kb' } });
   const contextText = startSession(projectRoot, hookOptions()).hookSpecificOutput.additionalContext;
   assert.match(contextText, /no bundle at `docs\/kb\/index\.md`/);
 });

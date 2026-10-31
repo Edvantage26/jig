@@ -1,6 +1,6 @@
 ---
 type: Configuration
-title: harness.json contract
+title: jig.json contract
 description: The per-repo file that makes generic hooks behave correctly in each project.
 tags: [config, contract, hooks]
 generated:
@@ -8,7 +8,7 @@ generated:
   at: '2026-10-31T12:00:00Z'
 ---
 
-Each repo commits `.claude/harness.json` (template in `templates/harness.json`).
+Each repo commits `.claude/jig.json` (template in `templates/jig.json`).
 
 | Field | Meaning |
 |---|---|
@@ -19,7 +19,7 @@ Each repo commits `.claude/harness.json` (template in `templates/harness.json`).
 | `knowledge` | Path of the OKF bundle; default `.okf` |
 | `modules.<id>` | `true`/`false` to force a module on/off, or an options object (with optional `enabled`) |
 
-Schema: `schema/harness.schema.json` (for editors). Validation at runtime is hand-written in
+Schema: `schema/jig.schema.json` (for editors). Validation at runtime is hand-written in
 `src/core/config.mjs`; unknown fields or modules make the file invalid and jig inactive.
 
 Three levels of genericity:

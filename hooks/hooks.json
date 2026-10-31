@@ -1,5 +1,5 @@
 {
-  "description": "jig: one entry point per event; modules and options come from the repo's .claude/harness.json.",
+  "description": "jig: one entry point per event; modules and options come from the repo's .claude/jig.json.",
   "hooks": {
     "SessionStart": [
       {

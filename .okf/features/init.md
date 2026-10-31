@@ -1,7 +1,7 @@
 ---
 type: Component
 title: /jig:init and the jig CLI
-description: Sets up jig in a repo - asks the features, writes harness.json and settings.json deterministically.
+description: Sets up jig in a repo - asks the features, writes jig.json and settings.json deterministically.
 tags: [init, cli, setup]
 generated:
   by: claude-code/claude-opus-5-5
@@ -22,7 +22,7 @@ sources:
   - `jig status [--json]`: repo root, harness present, trunk, knowledge path and bundle, features.
   - `jig init --features okf,danger [--verify "<cmd>" ...] [--knowledge <path>] [--json]`.
 - **What init writes**, merging with existing files:
-  - `.claude/harness.json`: `features` (every selectable feature, true/false), `trunk` (kept, else
+  - `.claude/jig.json`: `features` (every selectable feature, true/false), `trunk` (kept, else
     detected: origin/HEAD, then main/master, then current branch), `verify`, `knowledge`; other
     fields and `modules` are kept. The result is validated before writing.
   - `.claude/settings.json`: `extraKnownMarketplaces.jig` (github `Edvantage26/jig`) and

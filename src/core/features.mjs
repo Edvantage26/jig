@@ -1,4 +1,4 @@
-// Features are what a repo chooses in .claude/harness.json (`features.<id>: true | false`).
+// Features are what a repo chooses in .claude/jig.json (`features.<id>: true | false`).
 // Each module belongs to one feature; a feature can also ship skills (e.g. the OKF pack).
 // `enabledByDefault` applies when the repo does not mention the feature.
 

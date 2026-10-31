@@ -24,7 +24,7 @@ in the repo.
 | Trade | Skills: method (generic) and domain (project) | Method in jig, domain in the repo |
 | Reflexes | Hooks that enforce rules | jig |
 
-The frame is generic; each repo describes itself in `.claude/harness.json`
+The frame is generic; each repo describes itself in `.claude/jig.json`
 (see [contract](architecture/harness-contract.md)).
 
 # Status
@@ -40,6 +40,6 @@ Verified in real Claude Code sessions. Next steps in the [roadmap](roadmap.md).
 - `bin/jig-hook.mjs`, `src/`: hook runtime and modules; `src/okf/`: okf feature.
 - `bin/jig`, `src/cli/`, `skills/init/`: setup CLI and `/jig:init`.
 - `packs/okf/`: vendored OKF toolkit (git subtree).
-- `schema/harness.schema.json`, `templates/harness.json`: the per-repo contract.
+- `schema/jig.schema.json`, `templates/jig.json`: the per-repo contract.
 - `test/`: `npm test` (node:test, no dependencies).
 - [PROJECT.md](https://github.com/Edvantage26/jig/blob/main/PROJECT.md): full spec.

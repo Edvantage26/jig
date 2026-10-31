@@ -1,4 +1,4 @@
-// Writes the per-repo harness: .claude/harness.json (features and contract) and
+// Writes the per-repo harness: .claude/jig.json (features and contract) and
 // .claude/settings.json (enables jig for whoever opens the repo). Both files are merged with what
 // already exists, so running it again only changes what the person chose.
 // Overrides that only make sense on this machine (switching off the person's own standalone OKF
@@ -12,7 +12,7 @@ import { FEATURES, KNOWN_FEATURE_IDS, isFeatureEnabled } from '../core/features.
 import { validateHarnessConfig, SUPPORTED_CONFIG_VERSION } from '../core/config.mjs';
 import { KNOWN_MODULE_IDS } from '../core/registry.mjs';
 
-export const SCHEMA_URL = 'https://raw.githubusercontent.com/Edvantage26/jig/main/schema/harness.schema.json';
+export const SCHEMA_URL = 'https://raw.githubusercontent.com/Edvantage26/jig/main/schema/jig.schema.json';
 export const JIG_PLUGIN_ID = 'jig@jig';
 export const JIG_MARKETPLACE = { source: { source: 'github', repo: 'Edvantage26/jig' } };
 
@@ -69,12 +69,12 @@ export function ensureLocalSettingsIgnored(repoRoot) {
 }
 
 export function describeRepo(repoRoot) {
-  const harnessConfig = readJsonFile(join(repoRoot, '.claude', 'harness.json'));
-  const knowledgePath = harnessConfig?.knowledge || '.okf';
+  const jigConfig = readJsonFile(join(repoRoot, '.claude', 'jig.json'));
+  const knowledgePath = jigConfig?.knowledge || '.okf';
   return {
     repoRoot,
-    hasHarness: harnessConfig !== null,
-    trunk: harnessConfig?.trunk || detectTrunkBranch(repoRoot),
+    hasJigConfig: jigConfig !== null,
+    trunk: jigConfig?.trunk || detectTrunkBranch(repoRoot),
     knowledge: knowledgePath,
     hasKnowledgeBundle: existsSync(join(repoRoot, knowledgePath, 'index.md')),
     features: FEATURES.filter((featureDefinition) => !featureDefinition.alwaysOn).map((featureDefinition) => ({
@@ -82,7 +82,7 @@ export function describeRepo(repoRoot) {
       title: featureDefinition.title,
       description: featureDefinition.description,
       enabledByDefault: featureDefinition.enabledByDefault,
-      enabled: harnessConfig ? isFeatureEnabled(featureDefinition.id, { features: harnessConfig.features || {} }) : featureDefinition.enabledByDefault,
+      enabled: jigConfig ? isFeatureEnabled(featureDefinition.id, { features: jigConfig.features || {} }) : featureDefinition.enabledByDefault,
     })),
   };
 }
@@ -93,22 +93,22 @@ export function setupRepo(repoRoot, { enabledFeatureIds, verifyCommands, knowled
   const claudeDirectory = join(repoRoot, '.claude');
   mkdirSync(claudeDirectory, { recursive: true });
 
-  const harnessPath = join(claudeDirectory, 'harness.json');
-  const existingHarness = readJsonFile(harnessPath) || {};
+  const jigConfigPath = join(claudeDirectory, 'jig.json');
+  const existingJigConfig = readJsonFile(jigConfigPath) || {};
   const selectableFeatureIds = FEATURES.filter((featureDefinition) => !featureDefinition.alwaysOn).map((featureDefinition) => featureDefinition.id);
   const chosenFeatures = Object.fromEntries(selectableFeatureIds.map((featureId) => [featureId, enabledFeatureIds.includes(featureId)]));
-  const harnessConfig = {
+  const jigConfig = {
     $schema: SCHEMA_URL,
     version: SUPPORTED_CONFIG_VERSION,
-    ...existingHarness,
+    ...existingJigConfig,
     features: chosenFeatures,
-    trunk: existingHarness.trunk || detectTrunkBranch(repoRoot),
-    verify: verifyCommands ?? existingHarness.verify ?? [],
-    knowledge: knowledgePath || existingHarness.knowledge || '.okf',
+    trunk: existingJigConfig.trunk || detectTrunkBranch(repoRoot),
+    verify: verifyCommands ?? existingJigConfig.verify ?? [],
+    knowledge: knowledgePath || existingJigConfig.knowledge || '.okf',
   };
-  const validationErrors = validateHarnessConfig(harnessConfig, KNOWN_MODULE_IDS);
-  if (validationErrors.length) throw new Error(`resulting harness.json is invalid: ${validationErrors.join('; ')}`);
-  writeJsonFile(harnessPath, harnessConfig);
+  const validationErrors = validateHarnessConfig(jigConfig, KNOWN_MODULE_IDS);
+  if (validationErrors.length) throw new Error(`resulting jig.json is invalid: ${validationErrors.join('; ')}`);
+  writeJsonFile(jigConfigPath, jigConfig);
 
   const settingsPath = join(claudeDirectory, 'settings.json');
   const projectSettings = readJsonFile(settingsPath) || {};
@@ -128,14 +128,14 @@ export function setupRepo(repoRoot, { enabledFeatureIds, verifyCommands, knowled
   }
 
   return {
-    harnessPath,
+    jigConfigPath,
     settingsPath,
     localSettingsPath: disabledPlugins.length ? localSettingsPath : null,
     gitignoreUpdated,
     features: chosenFeatures,
-    trunk: harnessConfig.trunk,
-    knowledge: harnessConfig.knowledge,
-    hasKnowledgeBundle: existsSync(join(repoRoot, harnessConfig.knowledge, 'index.md')),
+    trunk: jigConfig.trunk,
+    knowledge: jigConfig.knowledge,
+    hasKnowledgeBundle: existsSync(join(repoRoot, jigConfig.knowledge, 'index.md')),
     disabledPlugins,
   };
 }

@@ -1,7 +1,7 @@
 {
   "name": "jig",
-  "version": "0.2.4",
-  "description": "The jig for your coding agent: per-repo features (OKF project knowledge, destructive-command guard...) chosen in .claude/harness.json.",
+  "version": "0.3.0",
+  "description": "The jig for your coding agent: per-repo features (OKF project knowledge, destructive-command guard...) chosen in .claude/jig.json.",
   "author": {
     "name": "Edvantage",
     "url": "https://github.com/Edvantage26"

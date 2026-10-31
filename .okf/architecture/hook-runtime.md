@@ -1,7 +1,7 @@
 ---
 type: Architecture
 title: Hook runtime (dispatcher and modules)
-description: One entry point per hook event that loads harness.json and runs the enabled modules.
+description: One entry point per hook event that loads jig.json and runs the enabled modules.
 tags: [hooks, runtime, modules]
 generated:
   by: claude-code/claude-opus-5-5
@@ -15,7 +15,7 @@ generated:
 
 1. `bin/jig-hook.mjs` reads the hook input JSON from stdin. Always exits 0.
 2. `src/core/dispatcher.mjs` resolves the project root (`CLAUDE_PROJECT_DIR`, else input `cwd`) and
-   loads `.claude/harness.json` with `src/core/config.mjs`.
+   loads `.claude/jig.json` with `src/core/config.mjs`.
    - Missing: jig is inactive; only a one-line note at SessionStart.
    - Invalid: inactive; SessionStart tells the agent why.
 3. It picks the modules for the event (`src/core/registry.mjs`), filtered by profile, per-repo
@@ -28,7 +28,7 @@ generated:
 
 `{ id, event, feature, description, toolNames?, run(moduleContext) -> decision }`, where
 `moduleContext` has `hookInput`, `config`, `projectRoot`, `environment`, `homeDirectory`, `enabledModules` and `moduleOptions`
-(`modules.<id>` from harness.json minus `enabled`). Decisions: `allow`, `ask`, `deny`, `block`,
+(`modules.<id>` from jig.json minus `enabled`). Decisions: `allow`, `ask`, `deny`, `block`,
 `context`. A reason always says how to carry on.
 
 Adding a module = one file (with its `feature`) + one line in the registry + its entry in the schema

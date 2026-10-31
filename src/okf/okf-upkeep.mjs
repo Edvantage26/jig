@@ -27,7 +27,7 @@ const MAX_VALIDATION_BLOCKS_PER_SESSION = 3;
 const MAX_LISTED_ERRORS = 15;
 const MAX_LISTED_FILES = 20;
 // Harness configuration is not project knowledge: editing it never asks for a concept update.
-const IGNORED_PATHS = new Set(['.claude/settings.json', '.claude/settings.local.json', '.claude/harness.json']);
+const IGNORED_PATHS = new Set(['.claude/settings.json', '.claude/settings.local.json', '.claude/jig.json']);
 
 function runGit(projectRoot, gitArguments) {
   return execFileSync('git', ['-C', projectRoot, ...gitArguments], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });

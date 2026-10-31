@@ -8,7 +8,7 @@ okf_version: "0.2"
 its own marketplace.
 
 * [Overview](overview.md) - what jig is, the four pieces and the current status.
-* [architecture/](architecture/index.md) - plugin layout, the `harness.json` contract and profiles.
+* [architecture/](architecture/index.md) - plugin layout, the `jig.json` contract and profiles.
 * [features/](features/index.md) - the okf feature and /jig:init.
 * [guards/](guards/index.md) - guards that run before tool calls.
 * [packs/](packs/index.md) - vendored toolkits (OKF).

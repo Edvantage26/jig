@@ -4,7 +4,7 @@
 
 A public, generic harness for coding agents (Claude Code first), distributed as a Claude Code plugin
 that is also its own marketplace. It gives any repo guardrails, a verification gate and project
-memory, configured per repo through `.claude/harness.json`.
+memory, configured per repo through `.claude/jig.json`.
 
 ## Context and origin
 
@@ -40,8 +40,8 @@ jig/
 ├── src/cli/ + bin/jig                setup CLI (jig status / jig init)
 ├── skills/init/                      /jig:init
 ├── packs/okf/                        OKF toolkit, git subtree of Edvantage26/okf-skills
-├── schema/harness.schema.json        contract for editors
-├── templates/harness.json            contract example
+├── schema/jig.schema.json        contract for editors
+├── templates/jig.json            contract example
 └── test/                             node:test suite, run in CI on Node 18/20/22
 ```
 
@@ -49,7 +49,7 @@ Module contract: `{ id, event, feature, description, toolNames?, run(context) ->
 Decisions: `allow`, `ask`, `deny`, `block` (Stop), `context` (SessionStart). Detail in
 `.okf/architecture/hook-runtime.md`.
 
-### Per-repo contract: `.claude/harness.json`
+### Per-repo contract: `.claude/jig.json`
 
 | Field | Meaning |
 |---|---|

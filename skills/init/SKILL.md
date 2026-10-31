@@ -1,6 +1,6 @@
 ---
 name: init
-description: Set up jig in the current repository — ask which features to enable (OKF project knowledge and the destructive-command guard are on by default), then write .claude/harness.json and .claude/settings.json so jig runs for everyone who opens the repo. Use when the person says "set up jig here", "configure the harness", "enable/disable a jig feature", "activa jig en este repo", or when a session reports that jig is installed but inactive.
+description: Set up jig in the current repository — ask which features to enable (OKF project knowledge and the destructive-command guard are on by default), then write .claude/jig.json and .claude/settings.json so jig runs for everyone who opens the repo. Use when the person says "set up jig here", "configure the harness", "enable/disable a jig feature", "activa jig en este repo", or when a session reports that jig is installed but inactive.
 ---
 
 # Set up jig in this repository
@@ -14,7 +14,7 @@ hand: it merges with existing files and validates the result.
 jig status --json
 ```
 
-It returns the repo root, whether `.claude/harness.json` exists, the detected protected branch,
+It returns the repo root, whether `.claude/jig.json` exists, the detected protected branch,
 the knowledge bundle path and whether a bundle exists, and every feature with `enabled` and
 `enabledByDefault`.
 
@@ -40,6 +40,6 @@ including any plugin it disabled in this repo to avoid duplicate OKF skills.
 
 - If `okf` is on and there is no bundle yet, offer to create one with the `okf` skill of this
   plugin (`/jig:okf`, produce mode). Do not create it without a yes.
-- Tell the person to commit `.claude/harness.json` and `.claude/settings.json`, and to restart
+- Tell the person to commit `.claude/jig.json` and `.claude/settings.json`, and to restart
   the Claude Code session so the hooks and skills load with the new configuration.
 - Do not commit on your own.

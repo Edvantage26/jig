@@ -1,7 +1,7 @@
 # CLAUDE.md
 
 `jig` is a **public** Claude Code plugin (and its own marketplace) that gives any repo guardrails, a
-verification gate and project memory, configured per repo with `.claude/harness.json`. Full spec and
+verification gate and project memory, configured per repo with `.claude/jig.json`. Full spec and
 phases in [PROJECT.md](PROJECT.md).
 
 ## Knowledge (OKF)
@@ -30,4 +30,4 @@ OKF validator in `--strict` mode (`python3 packs/okf/skills/validate/scripts/okf
 - `.claude-plugin/` manifests · `hooks/hooks.json` wiring
 - `bin/jig-hook.mjs` entry point · `bin/jig` CLI · `src/core/` runtime · `src/context/`, `src/okf/`, `src/guards/` modules
 - `skills/init/` `/jig:init` · `packs/okf/` vendored OKF toolkit
-- `schema/`, `templates/` the harness.json contract · `test/` node:test suite
+- `schema/`, `templates/` the jig.json contract · `test/` node:test suite

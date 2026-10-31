@@ -30,7 +30,7 @@ try {
     if (wantsJson) console.log(JSON.stringify(repoDescription, null, 2));
     else {
       console.log(`repo: ${repoDescription.repoRoot}`);
-      console.log(`harness.json: ${repoDescription.hasHarness ? 'present' : 'missing (run jig init)'}`);
+      console.log(`jig.json: ${repoDescription.hasJigConfig ? 'present' : 'missing (run jig init)'}`);
       console.log(`trunk: ${repoDescription.trunk} | knowledge: ${repoDescription.knowledge} (${repoDescription.hasKnowledgeBundle ? 'bundle found' : 'no bundle'})`);
       for (const featureStatus of repoDescription.features) {
         console.log(`  [${featureStatus.enabled ? 'x' : ' '}] ${featureStatus.id}: ${featureStatus.title}${featureStatus.enabledByDefault ? ' (default on)' : ''}`);
@@ -47,12 +47,12 @@ try {
     });
     if (wantsJson) console.log(JSON.stringify(setupResult, null, 2));
     else {
-      console.log(`wrote ${setupResult.harnessPath}`);
+      console.log(`wrote ${setupResult.jigConfigPath}`);
       console.log(`wrote ${setupResult.settingsPath}`);
       console.log(`features: ${Object.entries(setupResult.features).map(([featureId, isEnabled]) => `${featureId}=${isEnabled ? 'on' : 'off'}`).join(', ')}`);
       if (setupResult.disabledPlugins.length) console.log(`disabled for you in this repo (duplicate OKF skills), in ${setupResult.localSettingsPath}: ${setupResult.disabledPlugins.join(', ')}${setupResult.gitignoreUpdated ? ' (added to .gitignore)' : ''}`);
       if (setupResult.features.okf && !setupResult.hasKnowledgeBundle) console.log(`no OKF bundle at ${setupResult.knowledge}/ yet: create it with /jig:okf (produce mode)`);
-      console.log('Commit .claude/harness.json and .claude/settings.json, then restart the Claude Code session.');
+      console.log('Commit .claude/jig.json and .claude/settings.json, then restart the Claude Code session.');
     }
   } else {
     console.log('usage: jig status [--json] | jig init --features okf,danger [--verify "<command>" ...] [--knowledge <path>] [--json]');

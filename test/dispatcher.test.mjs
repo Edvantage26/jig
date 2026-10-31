@@ -8,14 +8,14 @@ import { createTemporaryProject, bashPayload } from './helpers.mjs';
 
 const quietOptions = { environment: {}, reportInternalError: () => {} };
 
-test('without harness.json jig only leaves a one-line note at session start', () => {
+test('without jig.json jig only leaves a one-line note at session start', () => {
   const projectRoot = createTemporaryProject();
   const sessionOutput = runHookEvent('SessionStart', { cwd: projectRoot }, quietOptions);
   assert.match(sessionOutput.hookSpecificOutput.additionalContext, /inactive/);
   assert.equal(runHookEvent('PreToolUse', bashPayload(projectRoot, 'git reset --hard'), quietOptions), null);
 });
 
-test('an invalid harness.json deactivates jig and says why', () => {
+test('an invalid jig.json deactivates jig and says why', () => {
   const projectRoot = createTemporaryProject({ features: { teleport: true } });
   const sessionOutput = runHookEvent('SessionStart', { cwd: projectRoot }, quietOptions);
   assert.match(sessionOutput.hookSpecificOutput.additionalContext, /invalid.*teleport/);
@@ -35,7 +35,7 @@ test('a safe command produces no output', () => {
   assert.equal(runHookEvent('PreToolUse', bashPayload(projectRoot, 'ls -la'), quietOptions), null);
 });
 
-test('a module switched off in harness.json does not run', () => {
+test('a module switched off in jig.json does not run', () => {
   const projectRoot = createTemporaryProject({ modules: { danger: false } });
   assert.equal(runHookEvent('PreToolUse', bashPayload(projectRoot, 'git reset --hard'), quietOptions), null);
 });

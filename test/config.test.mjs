@@ -47,7 +47,7 @@ test('modules follow their feature; a single module can still be switched off', 
 });
 
 test('schema lists every module, every user-facing feature and every danger rule', () => {
-  const harnessSchema = readJson('schema/harness.schema.json');
+  const harnessSchema = readJson('schema/jig.schema.json');
   const selectableFeatureIds = FEATURES.filter((featureDefinition) => !featureDefinition.alwaysOn).map((featureDefinition) => featureDefinition.id);
   assert.deepEqual(Object.keys(harnessSchema.properties.features.properties).sort(), selectableFeatureIds.sort());
   assert.deepEqual(Object.keys(harnessSchema.properties.modules.properties).sort(), [...KNOWN_MODULE_IDS].sort());

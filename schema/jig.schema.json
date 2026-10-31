@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/Edvantage26/jig/main/schema/harness.schema.json",
-  "title": "jig harness.json",
-  "description": "Per-repo contract read by the jig hooks (.claude/harness.json).",
+  "$id": "https://raw.githubusercontent.com/Edvantage26/jig/main/schema/jig.schema.json",
+  "title": "jig repo configuration (.claude/jig.json)",
+  "description": "Per-repo contract read by the jig hooks (.claude/jig.json).",
   "type": "object",
   "additionalProperties": false,
   "properties": {

@@ -1,7 +1,7 @@
 // danger: shell commands that destroy work, history or data with no undo.
 // `ask` stops and lets the person confirm in one click; `deny` refuses outright and is reserved for
 // bypassing safety checks or wiping things nobody means to wipe.
-// Options (`modules.danger` in harness.json):
+// Options (`modules.danger` in jig.json):
 //   ignore_rules: rule ids to switch off in this repo, e.g. ["rm-recursive-force"].
 
 import { askDecision, denyDecision, allowDecision } from '../core/hook-io.mjs';

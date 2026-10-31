@@ -2,13 +2,13 @@ import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-// Creates a throwaway project directory, optionally with a .claude/harness.json.
-export function createTemporaryProject(harnessConfig) {
+// Creates a throwaway project directory, optionally with a .claude/jig.json.
+export function createTemporaryProject(jigConfig) {
   const projectRoot = mkdtempSync(join(tmpdir(), 'jig-test-'));
-  if (harnessConfig !== undefined) {
+  if (jigConfig !== undefined) {
     mkdirSync(join(projectRoot, '.claude'), { recursive: true });
-    const configText = typeof harnessConfig === 'string' ? harnessConfig : JSON.stringify(harnessConfig);
-    writeFileSync(join(projectRoot, '.claude', 'harness.json'), configText);
+    const configText = typeof jigConfig === 'string' ? jigConfig : JSON.stringify(jigConfig);
+    writeFileSync(join(projectRoot, '.claude', 'jig.json'), configText);
   }
   return projectRoot;
 }

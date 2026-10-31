@@ -12,7 +12,7 @@ export function buildHarnessBrief(config, enabledModules) {
     `jig harness is active in this repo (protected branch: ${config.trunk}).`,
   ];
   if (activeFeatures.length) {
-    briefLines.push('Features enabled in .claude/harness.json:');
+    briefLines.push('Features enabled in .claude/jig.json:');
     for (const featureDefinition of activeFeatures) briefLines.push(`- ${featureDefinition.id}: ${featureDefinition.description}`);
   }
   const hookModules = enabledModules.filter((moduleDefinition) => moduleDefinition.id !== MODULE_ID);

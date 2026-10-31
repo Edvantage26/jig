@@ -16,7 +16,7 @@ generated:
 hooks/hooks.json                  planned: guard wiring via ${CLAUDE_PLUGIN_ROOT}
 scripts/                          planned: hook implementations, zero dependencies
 skills/  agents/                  planned: method skills and reviewers
-templates/harness.json            per-repo contract example
+templates/jig.json            per-repo contract example
 ```
 
 `CLAUDE.md` at the root is for developing jig; Claude Code does not load it as plugin context

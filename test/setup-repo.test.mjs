@@ -26,7 +26,7 @@ function writeUserSettings(enabledPlugins) {
   return settingsPath;
 }
 
-test('setup writes a valid harness.json and enables jig for the project', () => {
+test('setup writes a valid jig.json and enables jig for the project', () => {
   const repoRoot = createGitRepo();
   const setupResult = setupRepo(repoRoot, { enabledFeatureIds: ['okf', 'danger'], userSettingsPath: writeUserSettings({}) });
   assert.deepEqual(setupResult.features, { okf: true, danger: true });
@@ -42,16 +42,16 @@ test('setup keeps existing settings and harness fields', () => {
   const repoRoot = createGitRepo();
   mkdirSync(join(repoRoot, '.claude'));
   writeFileSync(join(repoRoot, '.claude', 'settings.json'), JSON.stringify({ permissions: { allow: ['Bash(ls)'] }, enabledPlugins: { 'other@x': true } }));
-  writeFileSync(join(repoRoot, '.claude', 'harness.json'), JSON.stringify({ trunk: 'develop', verify: ['make test'], modules: { danger: { ignore_rules: ['git-clean'] } } }));
+  writeFileSync(join(repoRoot, '.claude', 'jig.json'), JSON.stringify({ trunk: 'develop', verify: ['make test'], modules: { danger: { ignore_rules: ['git-clean'] } } }));
   setupRepo(repoRoot, { enabledFeatureIds: ['danger'], userSettingsPath: writeUserSettings({}) });
   const projectSettings = readJson(join(repoRoot, '.claude', 'settings.json'));
   assert.deepEqual(projectSettings.permissions, { allow: ['Bash(ls)'] });
   assert.equal(projectSettings.enabledPlugins['other@x'], true);
-  const harnessConfig = readJson(join(repoRoot, '.claude', 'harness.json'));
-  assert.equal(harnessConfig.trunk, 'develop');
-  assert.deepEqual(harnessConfig.verify, ['make test']);
-  assert.deepEqual(harnessConfig.modules, { danger: { ignore_rules: ['git-clean'] } });
-  assert.deepEqual(harnessConfig.features, { okf: false, danger: true });
+  const jigConfig = readJson(join(repoRoot, '.claude', 'jig.json'));
+  assert.equal(jigConfig.trunk, 'develop');
+  assert.deepEqual(jigConfig.verify, ['make test']);
+  assert.deepEqual(jigConfig.modules, { danger: { ignore_rules: ['git-clean'] } });
+  assert.deepEqual(jigConfig.features, { okf: false, danger: true });
 });
 
 test('with okf on, a standalone okf plugin is switched off in the personal settings only', () => {
@@ -72,7 +72,7 @@ test('with okf on, a standalone okf plugin is switched off in the personal setti
 test('unknown features are refused and nothing is written', () => {
   const repoRoot = createGitRepo();
   assert.throws(() => setupRepo(repoRoot, { enabledFeatureIds: ['teleport'], userSettingsPath: writeUserSettings({}) }), /unknown features: teleport/);
-  assert.equal(describeRepo(repoRoot).hasHarness, false);
+  assert.equal(describeRepo(repoRoot).hasJigConfig, false);
 });
 
 test('trunk detection prefers origin/HEAD, then main/master, then the current branch', () => {
@@ -88,7 +88,7 @@ test('findOtherOkfPlugins only returns enabled okf@ plugins', () => {
 test('status reports defaults before setup and choices after it', () => {
   const repoRoot = createGitRepo();
   const beforeSetup = describeRepo(repoRoot);
-  assert.equal(beforeSetup.hasHarness, false);
+  assert.equal(beforeSetup.hasJigConfig, false);
   assert.deepEqual(beforeSetup.features.map((featureStatus) => [featureStatus.id, featureStatus.enabled]), [['okf', true], ['danger', true]]);
   setupRepo(repoRoot, { enabledFeatureIds: ['okf'], userSettingsPath: writeUserSettings({}) });
   const afterSetup = describeRepo(repoRoot);
@@ -101,8 +101,8 @@ test('the jig CLI runs init and status from a subdirectory', () => {
   const environment = { PATH: process.env.PATH, HOME: mkdtempSync(join(tmpdir(), 'jig-home-')) };
   const initRun = spawnSync(process.execPath, [JIG_CLI, 'init', '--features', 'okf,danger', '--verify', 'npm test', '--json'], { cwd: join(repoRoot, 'src'), encoding: 'utf8', env: environment });
   assert.equal(initRun.status, 0, initRun.stderr);
-  assert.equal(JSON.parse(initRun.stdout).harnessPath, join(repoRoot, '.claude', 'harness.json'));
-  assert.deepEqual(readJson(join(repoRoot, '.claude', 'harness.json')).verify, ['npm test']);
+  assert.equal(JSON.parse(initRun.stdout).jigConfigPath, join(repoRoot, '.claude', 'jig.json'));
+  assert.deepEqual(readJson(join(repoRoot, '.claude', 'jig.json')).verify, ['npm test']);
   const statusRun = spawnSync(process.execPath, [JIG_CLI, 'status'], { cwd: repoRoot, encoding: 'utf8', env: environment });
   assert.match(statusRun.stdout, /\[x\] okf/);
   const badRun = spawnSync(process.execPath, [JIG_CLI, 'init', '--features', 'nope'], { cwd: repoRoot, encoding: 'utf8', env: environment });

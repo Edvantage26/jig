@@ -1,5 +1,5 @@
-// Loads and validates the per-repo contract, `.claude/harness.json`.
-// The JSON schema in schema/harness.schema.json describes the same rules for editors; this
+// Loads and validates the per-repo contract, `.claude/jig.json`.
+// The JSON schema in schema/jig.schema.json describes the same rules for editors; this
 // validator is hand-written so jig keeps zero dependencies. test/config.test.mjs checks that
 // both agree on the shipped templates.
 
@@ -7,7 +7,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { KNOWN_FEATURE_IDS, isFeatureEnabled } from './features.mjs';
 
-export const CONFIG_RELATIVE_PATH = join('.claude', 'harness.json');
+export const CONFIG_RELATIVE_PATH = join('.claude', 'jig.json');
 export const SUPPORTED_CONFIG_VERSION = 1;
 
 const KNOWN_TOP_LEVEL_FIELDS = new Set(['$schema', 'version', 'features', 'trunk', 'verify', 'knowledge', 'modules']);

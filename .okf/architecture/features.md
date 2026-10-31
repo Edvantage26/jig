@@ -1,7 +1,7 @@
 ---
 type: Architecture
 title: Features
-description: What a repo chooses in harness.json; each hook module belongs to one feature.
+description: What a repo chooses in jig.json; each hook module belongs to one feature.
 tags: [features, config]
 generated:
   by: claude-code/claude-opus-5-5
@@ -13,7 +13,7 @@ sources:
 ---
 
 Features replaced profiles on 2026-10-31 (see [profiles](profiles.md), deprecated). A repo turns
-them on or off in `.claude/harness.json` (`features.<id>: true | false`); an omitted feature uses
+them on or off in `.claude/jig.json` (`features.<id>: true | false`); an omitted feature uses
 its default. Each module declares `feature`, and runs only when that feature is on, unless the
 repo switches the single module off with `modules.<id>: false`.
 

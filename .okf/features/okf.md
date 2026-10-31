@@ -27,7 +27,7 @@ sources:
   bundle update: repo files changed since the session's base HEAD (tracked diff + untracked)
   modified after the newest bundle file, or project memories (`~/.claude/projects/<path>/memory/*.md`,
   not `MEMORY.md`) written in the session. Asks once per set of pending changes (fingerprint in the
-  session state). `.claude/settings.json`, `settings.local.json` and `harness.json` never count.
+  session state). `.claude/settings.json`, `settings.local.json` and `jig.json` never count.
 - **Validation gate (Stop, same module):** when the bundle was changed in the session, the hook
   runs the bundled validator itself (`python3 packs/okf/.../okf_validate.py --json`, ~0.2 s on a
   45-concept bundle) and blocks only on ERRORS, listing them; warnings (e.g. v0.1 legacy) never
@@ -54,7 +54,7 @@ From the [OKF pack](/packs/okf-pack.md): `/jig:okf`, `/jig:validate`, `/jig:visu
 
 A machine may already have a standalone `okf@...` plugin and a global OKF guard hook. In a repo set
 up with `jig init` and `okf` on, the standalone plugin is disabled in the personal
-`.claude/settings.local.json` (no duplicate skills, nothing committed), and a guard hook should skip repos that have `.claude/harness.json`. Verified in
+`.claude/settings.local.json` (no duplicate skills, nothing committed), and a guard hook should skip repos that have `.claude/jig.json`. Verified in
 a real session on 2026-10-31: only `jig:*` skills listed, a single upkeep reminder.
 
 # State

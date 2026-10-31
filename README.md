@@ -36,11 +36,11 @@ that pile a fixed shape.
 ## Generic frame, project content
 
 `jig` is generic because it only ships the frame. Each repo describes itself in one file,
-`.claude/harness.json`, and the same hooks behave correctly everywhere:
+`.claude/jig.json`, and the same hooks behave correctly everywhere:
 
 ```json
 {
-  "$schema": "https://raw.githubusercontent.com/Edvantage26/jig/main/schema/harness.schema.json",
+  "$schema": "https://raw.githubusercontent.com/Edvantage26/jig/main/schema/jig.schema.json",
   "version": 1,
   "features": { "okf": true, "danger": true },
   "trunk": "main",
@@ -58,7 +58,7 @@ invalid, jig stays inactive and tells the agent why at session start.
 | Level | Examples | Lives in |
 |---|---|---|
 | Generic as is | Destructive-command guard, no `--no-verify`, secret scan, "verify before done" | `jig` |
-| Generic with config | Verification command, what counts as production, trunk branch | `jig` + `harness.json` |
+| Generic with config | Verification command, what counts as production, trunk branch | `jig` + `jig.json` |
 | Specific | Knowledge, domain skills, MCP servers | The repo |
 
 ### Features
@@ -69,7 +69,7 @@ Each repo picks its features; you do not need to write the file by hand:
 /jig:init
 ```
 
-asks which features to enable and writes `.claude/harness.json` and `.claude/settings.json` (it
+asks which features to enable and writes `.claude/jig.json` and `.claude/settings.json` (it
 runs the `jig` CLI, so the result is merged and validated, not improvised).
 
 | Feature | Default | What it does |
@@ -87,14 +87,14 @@ runs the `jig` CLI, so the result is merged and validated, not improvised).
 | `danger`: confirms or refuses `git reset --hard`, force push, `rm -rf`, `--no-verify`, `DROP TABLE`... | danger | PreToolUse | works |
 | `/jig:init` + `jig` CLI (`jig status`, `jig init`) | — | — | works |
 | OKF toolkit skills and agents (from `packs/okf`) | okf | — | works |
-| `prod`: blocks writes to production resources declared in `harness.json` | prod | PreToolUse | planned |
+| `prod`: blocks writes to production resources declared in `jig.json` | prod | PreToolUse | planned |
 | `secrets`: refuses committing secrets | secrets | PreToolUse | planned |
 | `verify`: no "done" after code changes without running `verify` | verify | Stop | planned |
 | `jig doctor`, method skills (`ftd`, `review`) and a finding verifier | — | — | planned |
 
 ### How it works
 
-Every hook event calls one entry point, `bin/jig-hook.mjs`. It loads `.claude/harness.json`, runs the
+Every hook event calls one entry point, `bin/jig-hook.mjs`. It loads `.claude/jig.json`, runs the
 modules of the enabled features for that event, and combines their decisions (refuse > ask > allow).
 A module is one file with `{ id, event, feature, run() }`; adding one does not touch the hook
 wiring. Internal errors never block the agent; a matched rule does.
@@ -128,7 +128,7 @@ claude plugin validate .
 /plugin install jig@jig
 ```
 
-Then run `/jig:init` in each repo. It commits nothing; commit `.claude/harness.json` and
+Then run `/jig:init` in each repo. It commits nothing; commit `.claude/jig.json` and
 `.claude/settings.json` yourself. The project settings enable jig for everyone who opens the repo:
 
 ```json
