@@ -34,12 +34,12 @@ export function newestModificationMilliseconds(directoryPath) {
 
 export function buildMaintenanceRules(bundleRelativePath, specVersion) {
   const maintenanceRules = [
-    `Update the affected concept in \`${bundleRelativePath}/\`: body, cross-links, and \`generated: { by: claude-code/<model>, at: <ISO 8601> }\` (a person writes \`human:<id>\`). A new asset gets a new concept.`,
+    `Update the affected concept in \`${bundleRelativePath}/\`: body, cross-links, and \`generated: { by: claude-code/<model>, at: <now> }\` with the real current UTC time (\`date -u +%Y-%m-%dT%H:%M:%SZ\`); a person writes \`human:<id>\`. A new asset gets a new concept.`,
     `Add a dated entry to \`${bundleRelativePath}/log.md\` only for lifecycle events (created, deprecated, superseded, regenerated, verified); routine edits get none.`,
     `Validate with /jig:validate ${bundleRelativePath} and fix every ERROR.`,
   ];
   if (specVersion && specVersion.startsWith('0.1')) {
-    maintenanceRules.push('This bundle is still OKF v0.1: legacy-format warnings (timestamp, # Citations) are expected. Do NOT migrate it on your own; migration is a deliberate, per-repo step.');
+    maintenanceRules.push('This bundle is still OKF v0.1: legacy-format warnings (timestamp, # Citations) are expected. Do NOT migrate the bundle on your own; migration is a deliberate, per-repo step. In each concept you edit, REPLACE its `timestamp:` line with `generated` (do not keep both).');
   }
   return maintenanceRules;
 }

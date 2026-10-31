@@ -55,7 +55,8 @@ test('okf-index loads the bundle index with v0.2 maintenance rules', () => {
   const contextText = startSession(projectRoot, hookOptions()).hookSpecificOutput.additionalContext;
   assert.match(contextText, /OKF bundle at `\.okf\/` \(spec 0\.2\)/);
   assert.match(contextText, /# Demo bundle/);
-  assert.match(contextText, /generated: \{ by: claude-code\/<model>/);
+  assert.match(contextText, /generated: \{ by: claude-code\/<model>, at: <now> \}/);
+  assert.match(contextText, /date -u/);
   assert.match(contextText, /\/jig:validate \.okf/);
   assert.match(contextText, /only for lifecycle events/);
   assert.doesNotMatch(contextText, /Do NOT migrate/);
@@ -65,7 +66,8 @@ test('a v0.1 bundle is told not to migrate on its own', () => {
   const projectRoot = createRepoWithBundle({ indexText: V01_INDEX });
   const contextText = startSession(projectRoot, hookOptions()).hookSpecificOutput.additionalContext;
   assert.match(contextText, /spec 0\.1/);
-  assert.match(contextText, /Do NOT migrate it on your own/);
+  assert.match(contextText, /Do NOT migrate the bundle on your own/);
+  assert.match(contextText, /REPLACE its `timestamp:` line with `generated`/);
 });
 
 test('okf enabled without a bundle suggests creating one', () => {
@@ -158,7 +160,7 @@ test('okf-upkeep: a v0.1 bundle reminder keeps the no-migration rule', () => {
   const options = hookOptions();
   startSession(projectRoot, options);
   writeFileSync(join(projectRoot, 'src', 'app.py'), 'print(2)\n');
-  assert.match(stopSession(projectRoot, options).reason, /Do NOT migrate it on your own/);
+  assert.match(stopSession(projectRoot, options).reason, /Do NOT migrate the bundle on your own/);
 });
 
 test('okf-upkeep: a session that never ran SessionStart uses the current HEAD', () => {

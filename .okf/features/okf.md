@@ -5,7 +5,7 @@ description: Project knowledge in an OKF bundle - index at session start, upkeep
 tags: [okf, knowledge, hooks, skills]
 generated:
   by: claude-code/claude-opus-5-5
-  at: '2026-10-31T12:00:00Z'
+  at: '2026-10-31T16:30:00Z'
 sources:
   - id: okf-index
     resource: src/okf/okf-index.mjs
@@ -29,9 +29,14 @@ sources:
   not `MEMORY.md`) written in the session. Asks once per set of pending changes (fingerprint in the
   session state). `.claude/settings.json`, `settings.local.json` and `harness.json` never count.
   `stop_hook_active` never blocks.
-- **Rules given to the agent:** update the concept and `generated: { by: claude-code/<model>, at }`;
-  `log.md` only for lifecycle events; validate with `/jig:validate` and fix errors. On a v0.1
-  bundle: legacy warnings are expected and the agent must not migrate on its own.
+- **Rules given to the agent:** update the concept and `generated: { by: claude-code/<model>, at }`
+  with the real current UTC time; `log.md` only for lifecycle events; validate with `/jig:validate`
+  and fix errors. On a v0.1 bundle: legacy warnings are expected, the agent must not migrate the
+  bundle, and in each concept it edits it replaces `timestamp` with `generated`.
+- **Field test (2026-10-31, copy of a real v0.1 bundle):** after a code change the agent updated the
+  right concept and left `log.md` alone, but kept `timestamp` next to `generated`, invented the time
+  and skipped `/jig:validate`; the first two led to the stricter rules above. Running the validator
+  from the Stop hook itself is a planned improvement.
 
 # Skills and agents
 
