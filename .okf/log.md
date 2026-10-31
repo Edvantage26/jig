@@ -1,5 +1,9 @@
 # Update Log
 
+## 2026-10-31
+* **Creation**: [features](architecture/features.md), [okf feature](features/okf.md), [/jig:init and the CLI](features/init.md), [OKF pack](packs/okf-pack.md).
+* **Deprecation**: [profiles](architecture/profiles.md) superseded by [features](architecture/features.md).
+
 ## 2026-10-30
 * **Migration**: bundle migrated to OKF v0.2 with `okf_validate.py --migrate` (`timestamp` -> `generated`).
 * **Creation**: [Hook runtime](architecture/hook-runtime.md) and [danger guard](guards/danger.md) — increment 1: single entry point, module registry, harness.json validation, brief at session start, 65 tests, CI, verified in real Claude Code sessions.

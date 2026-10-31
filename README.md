@@ -7,8 +7,9 @@ the same no matter who makes it. `jig` does that for coding agents (Claude Code 
 repo in place with guardrails, makes the agent prove its work before calling it done, and keeps what
 it learns in the repo instead of in a chat that disappears.
 
-> **Status: early (v0.1.0).** The hook runtime, the session brief and the `danger` guard work and are
-> tested. Everything marked *planned* does not exist yet.
+> **Status: early (v0.2.0).** Per-repo features, the `okf` feature (project knowledge) and the
+> `danger` guard work, are tested and verified in real sessions. Everything marked *planned* does not
+> exist yet.
 
 ## Why
 
@@ -41,7 +42,7 @@ that pile a fixed shape.
 {
   "$schema": "https://raw.githubusercontent.com/Edvantage26/jig/main/schema/harness.schema.json",
   "version": 1,
-  "profile": "service",
+  "features": { "okf": true, "danger": true },
   "trunk": "main",
   "verify": ["npm test"],
   "knowledge": ".okf",
@@ -51,8 +52,8 @@ that pile a fixed shape.
 }
 ```
 
-Without this file jig stays inactive. If the file is invalid, jig stays inactive and tells the agent
-why at session start.
+Without this file jig stays inactive (the session start only mentions `/jig:init`). If the file is
+invalid, jig stays inactive and tells the agent why at session start.
 
 | Level | Examples | Lives in |
 |---|---|---|
@@ -60,35 +61,46 @@ why at session start.
 | Generic with config | Verification command, what counts as production, trunk branch | `jig` + `harness.json` |
 | Specific | Knowledge, domain skills, MCP servers | The repo |
 
-### Profiles
+### Features
 
-Not every repo needs the same weight.
+Each repo picks its features; you do not need to write the file by hand:
 
-- `minimal`: guardrails + knowledge memory. For small sites and scripts.
-- `service`: + verification gate and CI checks. For backends and APIs.
-- `product`: + work lanes (fast change vs. spec-driven) and adversarial review. For products.
+```text
+/jig:init
+```
+
+asks which features to enable and writes `.claude/harness.json` and `.claude/settings.json` (it
+runs the `jig` CLI, so the result is merged and validated, not improvised).
+
+| Feature | Default | What it does |
+|---|---|---|
+| `okf` | on | Project knowledge in an [OKF](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf) bundle: loads its index at session start, asks to update it when the session changed files or saved memories after its last update, and ships the OKF toolkit (`/jig:okf`, `/jig:validate`, `/jig:visualize`, `/jig:backfill`) |
+| `danger` | on | Confirms or refuses commands that destroy work or data |
 
 ## Components
 
-| Component | Event | Status |
-|---|---|---|
-| `brief`: tells the agent at session start which harness runs here | SessionStart | works |
-| `danger`: confirms or refuses commands that destroy work or data (`git reset --hard`, force push, `rm -rf`, `--no-verify`, `DROP TABLE`...) | PreToolUse | works |
-| `prod`: blocks writes to production resources declared in `harness.json` | PreToolUse | planned |
-| `secrets`: refuses committing secrets | PreToolUse | planned |
-| `verify-gate`: no "done" after code changes without running `verify` | Stop | planned |
-| `knowledge-guard`: asks to update the knowledge bundle after relevant changes | Stop | planned |
-| `/jig:init`, `jig doctor`: configure and audit a repo | command | planned |
-| Skills `ftd`, `verify`, `review` and a finding verifier | skills | planned |
+| Component | Feature | Event | Status |
+|---|---|---|---|
+| `brief`: tells the agent at session start which harness runs here | core | SessionStart | works |
+| `okf-index`: loads the knowledge bundle index and its maintenance rules | okf | SessionStart | works |
+| `okf-upkeep`: asks to update the bundle after changes or new memories, once per change set | okf | Stop | works |
+| `danger`: confirms or refuses `git reset --hard`, force push, `rm -rf`, `--no-verify`, `DROP TABLE`... | danger | PreToolUse | works |
+| `/jig:init` + `jig` CLI (`jig status`, `jig init`) | — | — | works |
+| OKF toolkit skills and agents (from `packs/okf`) | okf | — | works |
+| `prod`: blocks writes to production resources declared in `harness.json` | prod | PreToolUse | planned |
+| `secrets`: refuses committing secrets | secrets | PreToolUse | planned |
+| `verify`: no "done" after code changes without running `verify` | verify | Stop | planned |
+| `jig doctor`, method skills (`ftd`, `review`) and a finding verifier | — | — | planned |
 
 ### How it works
 
 Every hook event calls one entry point, `bin/jig-hook.mjs`. It loads `.claude/harness.json`, runs the
-modules enabled for that event and profile, and combines their decisions (refuse > ask > allow).
-A module is one file with `{ id, event, profiles, run() }`; adding one does not touch the hook
+modules of the enabled features for that event, and combines their decisions (refuse > ask > allow).
+A module is one file with `{ id, event, feature, run() }`; adding one does not touch the hook
 wiring. Internal errors never block the agent; a matched rule does.
 
-Requirements: Node 18 or later.
+Requirements: Node 18 or later; the OKF toolkit scripts also need [uv](https://docs.astral.sh/uv/)
+(Python).
 
 ## Development
 
@@ -114,7 +126,8 @@ claude plugin validate .
 /plugin install jig@jig
 ```
 
-To offer it to everyone who clones a project, commit this in the project's `.claude/settings.json`:
+Then run `/jig:init` in each repo. It commits nothing; commit `.claude/harness.json` and
+`.claude/settings.json` yourself. The project settings enable jig for everyone who opens the repo:
 
 ```json
 {
@@ -125,12 +138,21 @@ To offer it to everyone who clones a project, commit this in the project's `.cla
 }
 ```
 
+If you already use a standalone OKF plugin (`okf@...`), `jig init` disables it in that repo so the
+OKF skills are not listed twice.
+
 ## Credits
 
 The design draws on ideas from [Superpowers](https://github.com/obra/superpowers) (methodology as
 skills, verification before completion) and [rsc-harness](https://github.com/ericrisco/rsc-harness)
 (memory/hands/trade/reflexes, work lanes, refuting reviewers). Both are MIT licensed. No code from
-them is included at this stage.
+them is included.
+
+The OKF toolkit in `packs/okf/` is a git subtree of
+[Edvantage26/okf-skills](https://github.com/Edvantage26/okf-skills), a fork of
+[scaccogatto/okf-skills](https://github.com/scaccogatto/okf-skills) by Marco Boffo (MIT). Its
+`LICENSE`, `NOTICE` and `FORK.md` are kept in that folder; the OKF specification it vendors is
+(c) Google LLC under Apache 2.0.
 
 ## License
 

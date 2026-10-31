@@ -5,14 +5,14 @@ import { combineDecisions, buildHookOutput, contextDecision } from './hook-io.mj
 import { loadHarnessConfig, resolveProjectRoot, isModuleEnabled, getModuleOptions, CONFIG_RELATIVE_PATH } from './config.mjs';
 import { ALL_MODULES, KNOWN_MODULE_IDS, modulesForEvent } from './registry.mjs';
 
-export function runHookEvent(eventName, hookInput, { environment = process.env, availableModules = ALL_MODULES, reportInternalError = defaultErrorReporter } = {}) {
+export function runHookEvent(eventName, hookInput, { environment = process.env, homeDirectory, availableModules = ALL_MODULES, reportInternalError = defaultErrorReporter } = {}) {
   const projectRoot = resolveProjectRoot(hookInput, environment);
   const loadedConfig = loadHarnessConfig(projectRoot, KNOWN_MODULE_IDS);
 
   if (loadedConfig.status === 'missing') {
     // Inactive without a contract: one line at session start so the agent can mention it, nothing else.
     if (eventName !== 'SessionStart') return null;
-    return buildHookOutput(eventName, contextDecision('setup', `jig plugin is installed but inactive here: no ${CONFIG_RELATIVE_PATH}. Template: templates/harness.json in the jig repo.`));
+    return buildHookOutput(eventName, contextDecision('setup', `jig plugin is installed but inactive here: no ${CONFIG_RELATIVE_PATH}. To set it up, the person can run /jig:init.`));
   }
   if (loadedConfig.status === 'invalid') {
     reportInternalError(`invalid ${loadedConfig.configPath}: ${loadedConfig.errors.join('; ')}`);
@@ -30,6 +30,8 @@ export function runHookEvent(eventName, hookInput, { environment = process.env, 
         hookInput,
         config,
         projectRoot,
+        environment,
+        homeDirectory,
         enabledModules,
         moduleOptions: getModuleOptions(moduleDefinition.id, config),
       }));

@@ -166,7 +166,7 @@ export default {
   id: MODULE_ID,
   event: 'PreToolUse',
   toolNames: ['Bash'],
-  profiles: ['minimal', 'service', 'product'],
+  feature: 'danger',
   description: 'Confirms or refuses shell commands that destroy work, history or data with no undo.',
   run({ hookInput, moduleOptions }) {
     const commandLine = hookInput.tool_input?.command;

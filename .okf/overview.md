@@ -4,8 +4,8 @@ title: jig overview
 description: What jig is, the four pieces of a harness, and what exists today.
 tags: [overview, harness]
 generated:
-  by: process:okf-migrate
-  at: '2026-10-30T16:00:00Z'
+  by: claude-code/claude-opus-5-5
+  at: '2026-10-31T12:00:00Z'
 ---
 
 # What it is
@@ -29,14 +29,17 @@ The frame is generic; each repo describes itself in `.claude/harness.json`
 
 # Status
 
-Increment 1 done (2026-10-30): [hook runtime](architecture/hook-runtime.md) with the `brief`
-context module and the [danger guard](guards/danger.md), JSON schema, tests and CI. Next increments
-in the [roadmap](roadmap.md).
+v0.2.0 (2026-10-31): per-repo [features](architecture/features.md) chosen with
+[/jig:init](features/init.md); the [okf feature](features/okf.md) (index, upkeep, OKF toolkit from
+the [OKF pack](packs/okf-pack.md)) and the [danger guard](guards/danger.md), both on by default.
+Verified in real Claude Code sessions. Next steps in the [roadmap](roadmap.md).
 
 # Code map
 
 - `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`: see [plugin layout](architecture/plugin-layout.md).
-- `bin/jig-hook.mjs`, `src/`: hook runtime and modules.
+- `bin/jig-hook.mjs`, `src/`: hook runtime and modules; `src/okf/`: okf feature.
+- `bin/jig`, `src/cli/`, `skills/init/`: setup CLI and `/jig:init`.
+- `packs/okf/`: vendored OKF toolkit (git subtree).
 - `schema/harness.schema.json`, `templates/harness.json`: the per-repo contract.
 - `test/`: `npm test` (node:test, no dependencies).
 - [PROJECT.md](https://github.com/Edvantage26/jig/blob/main/PROJECT.md): full spec.

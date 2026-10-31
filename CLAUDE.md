@@ -10,7 +10,7 @@ OKF v0.2. Read `.okf/index.md` first and follow the links to the relevant concep
 that affects a documented asset (contract, module, decision, roadmap), update its concept body and
 `generated: { by: <agent>/<version> or human:<id>, at: <ISO 8601> }`. Add a dated `.okf/log.md` entry
 only for lifecycle events (created, deprecated, superseded, regenerated, verified). Validate with the
-OKF validator in `--strict` mode.
+OKF validator in `--strict` mode (`uv run packs/okf/skills/validate/scripts/okf_validate.py .okf --strict`).
 
 ## Rules for this repo
 
@@ -20,12 +20,14 @@ OKF validator in `--strict` mode.
   errors; fail closed only on matched production writes.
 - **Never grant the agent git permissions** (commit/push) from the plugin.
 - Every module ships with tests; run `npm test` and `claude plugin validate .` before committing.
-- Adding a module: one file, one line in `src/core/registry.mjs`, its entry in the schema.
+- Adding a module: one file (with its `feature`), one line in `src/core/registry.mjs`, its entry in the schema.
+- `packs/okf/` is a git subtree: never edit it here; change the fork and `git subtree pull` (see `.okf/packs/okf-pack.md`).
 - Keep `.claude-plugin/plugin.json` and `marketplace.json` versions in sync; tag releases.
 - README describes only what exists; anything not built yet is marked *planned*.
 
 ## Layout
 
 - `.claude-plugin/` manifests · `hooks/hooks.json` wiring
-- `bin/jig-hook.mjs` entry point · `src/core/` runtime · `src/context/`, `src/guards/` modules
+- `bin/jig-hook.mjs` entry point · `bin/jig` CLI · `src/core/` runtime · `src/context/`, `src/okf/`, `src/guards/` modules
+- `skills/init/` `/jig:init` · `packs/okf/` vendored OKF toolkit
 - `schema/`, `templates/` the harness.json contract · `test/` node:test suite

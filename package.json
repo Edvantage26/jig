@@ -1,11 +1,13 @@
 {
   "name": "@edvantage/jig",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "The jig for your coding agent: guardrails, verification and project memory, configured per repo.",
   "type": "module",
   "private": true,
   "license": "MIT",
-  "engines": { "node": ">=18" },
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "test": "node --test test/*.test.mjs"
   }

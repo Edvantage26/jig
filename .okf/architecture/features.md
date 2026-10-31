@@ -1,0 +1,30 @@
+---
+type: Architecture
+title: Features
+description: What a repo chooses in harness.json; each hook module belongs to one feature.
+tags: [features, config]
+generated:
+  by: claude-code/claude-opus-5-5
+  at: '2026-10-31T12:00:00Z'
+sources:
+  - id: features-source
+    resource: src/core/features.mjs
+    title: Feature registry
+---
+
+Features replaced profiles on 2026-10-31 (see [profiles](profiles.md), deprecated). A repo turns
+them on or off in `.claude/harness.json` (`features.<id>: true | false`); an omitted feature uses
+its default. Each module declares `feature`, and runs only when that feature is on, unless the
+repo switches the single module off with `modules.<id>: false`.
+
+| Feature | Default | Modules | Ships |
+|---|---|---|---|
+| `okf` | on | `okf-index` (SessionStart), `okf-upkeep` (Stop) | OKF pack skills and agents, see [okf feature](/features/okf.md) |
+| `danger` | on | `danger` (PreToolUse Bash) | see [danger guard](/guards/danger.md) |
+| `core` | always on | `brief` (SessionStart) | — |
+
+Feature choice is per repo because plugin options (`userConfig`) are stored per user only in
+Claude Code; the repo file travels with the code. [/jig:init](/features/init.md) writes it.
+
+Limitation: plugin skills cannot be switched off by a feature. With `okf` off, its hooks stay
+silent but `/jig:okf` and `/jig:validate` are still listed.

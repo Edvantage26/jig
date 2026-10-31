@@ -4,8 +4,8 @@ title: Hook runtime (dispatcher and modules)
 description: One entry point per hook event that loads harness.json and runs the enabled modules.
 tags: [hooks, runtime, modules]
 generated:
-  by: process:okf-migrate
-  at: '2026-10-30T16:00:00Z'
+  by: claude-code/claude-opus-5-5
+  at: '2026-10-31T12:00:00Z'
 ---
 
 # Flow
@@ -26,12 +26,12 @@ generated:
 
 # Module contract
 
-`{ id, event, profiles, description, toolNames?, run(moduleContext) -> decision }`, where
-`moduleContext` has `hookInput`, `config`, `projectRoot`, `enabledModules` and `moduleOptions`
+`{ id, event, feature, description, toolNames?, run(moduleContext) -> decision }`, where
+`moduleContext` has `hookInput`, `config`, `projectRoot`, `environment`, `homeDirectory`, `enabledModules` and `moduleOptions`
 (`modules.<id>` from harness.json minus `enabled`). Decisions: `allow`, `ask`, `deny`, `block`,
 `context`. A reason always says how to carry on.
 
-Adding a module = one file + one line in the registry + its entry in the schema
+Adding a module = one file (with its `feature`) + one line in the registry + its entry in the schema
 (`test/config.test.mjs` fails if the schema and the registry disagree).
 
 # Failure policy
@@ -41,16 +41,18 @@ decide. Garbage input makes the entry point exit 0 with no output.
 
 # Current modules
 
-| Module | Event | Profiles |
+| Module | Event | Feature |
 |---|---|---|
-| `brief` | SessionStart | all |
-| `danger` | PreToolUse (Bash) | all |
+| `brief` | SessionStart | core (always on) |
+| `okf-index` | SessionStart | okf |
+| `danger` | PreToolUse (Bash) | danger |
+| `okf-upkeep` | Stop | okf |
 
-See [danger guard](/guards/danger.md).
+See [features](features.md), [okf feature](/features/okf.md), [danger guard](/guards/danger.md).
 
 # Verified
 
-- `npm test`: 65 tests (parser, rules, config, dispatcher, entry point, manifests).
+- `npm test`: 87 tests on 2026-10-31 (65 on 2026-10-30) (parser, rules, config, dispatcher, entry point, manifests).
 - Real Claude Code sessions with `--plugin-dir` (2026-10-30): SessionStart brief injected;
   `git reset --hard` stopped by `ask` (headless = refused, work kept); `git commit --no-verify`
   refused by `deny`. Headless `claude -p` on the dev server needs the account wrapper for auth.

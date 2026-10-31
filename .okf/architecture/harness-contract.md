@@ -4,8 +4,8 @@ title: harness.json contract
 description: The per-repo file that makes generic hooks behave correctly in each project.
 tags: [config, contract, hooks]
 generated:
-  by: process:okf-migrate
-  at: '2026-10-30T16:00:00Z'
+  by: claude-code/claude-opus-5-5
+  at: '2026-10-31T12:00:00Z'
 ---
 
 Each repo commits `.claude/harness.json` (template in `templates/harness.json`).
@@ -13,10 +13,10 @@ Each repo commits `.claude/harness.json` (template in `templates/harness.json`).
 | Field | Meaning |
 |---|---|
 | `version` | Contract version, currently `1` |
-| `profile` | `minimal`, `service` or `product` (see [profiles](profiles.md)); default `minimal` |
+| `features.<id>` | `true`/`false` per [feature](features.md); omitted features use their default (`okf`, `danger`: on) |
 | `trunk` | Protected branch name; default `main` |
 | `verify` | Commands that must pass before the agent calls a change done |
-| `knowledge` | Path of the OKF bundle, or `null` |
+| `knowledge` | Path of the OKF bundle; default `.okf` |
 | `modules.<id>` | `true`/`false` to force a module on/off, or an options object (with optional `enabled`) |
 
 Schema: `schema/harness.schema.json` (for editors). Validation at runtime is hand-written in

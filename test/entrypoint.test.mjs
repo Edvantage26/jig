@@ -15,7 +15,7 @@ function runEntrypoint(eventName, stdinText, environment = {}) {
 }
 
 test('entrypoint prints the decision JSON and exits 0', () => {
-  const projectRoot = createTemporaryProject({ profile: 'minimal' });
+  const projectRoot = createTemporaryProject({});
   const hookRun = runEntrypoint('PreToolUse', JSON.stringify(bashPayload(projectRoot, 'git push --force')));
   assert.equal(hookRun.status, 0);
   assert.equal(JSON.parse(hookRun.stdout).hookSpecificOutput.permissionDecision, 'ask');

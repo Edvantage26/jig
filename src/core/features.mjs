@@ -1,0 +1,39 @@
+// Features are what a repo chooses in .claude/harness.json (`features.<id>: true | false`).
+// Each module belongs to one feature; a feature can also ship skills (e.g. the OKF pack).
+// `enabledByDefault` applies when the repo does not mention the feature.
+
+export const FEATURES = [
+  {
+    id: 'okf',
+    title: 'OKF project knowledge',
+    description: 'Loads the knowledge bundle index at session start and asks to keep it up to date after changes. Skills: /jig:okf, /jig:validate, /jig:visualize, /jig:backfill.',
+    enabledByDefault: true,
+  },
+  {
+    id: 'danger',
+    title: 'Destructive command guard',
+    description: 'Confirms or refuses shell commands that destroy work, history or data (reset --hard, force push, rm -r, DROP TABLE, --no-verify...).',
+    enabledByDefault: true,
+  },
+  {
+    id: 'core',
+    title: 'Harness brief',
+    description: 'Tells the agent at session start which harness runs in the repo. Always on.',
+    enabledByDefault: true,
+    alwaysOn: true,
+  },
+];
+
+export const KNOWN_FEATURE_IDS = FEATURES.map((featureDefinition) => featureDefinition.id);
+
+export function findFeature(featureId) {
+  return FEATURES.find((featureDefinition) => featureDefinition.id === featureId);
+}
+
+export function isFeatureEnabled(featureId, config) {
+  const featureDefinition = findFeature(featureId);
+  if (!featureDefinition) return false;
+  if (featureDefinition.alwaysOn) return true;
+  const featureSetting = config.features?.[featureId];
+  return typeof featureSetting === 'boolean' ? featureSetting : featureDefinition.enabledByDefault;
+}

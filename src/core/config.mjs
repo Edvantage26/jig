@@ -5,19 +5,19 @@
 
 import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { KNOWN_FEATURE_IDS, isFeatureEnabled } from './features.mjs';
 
 export const CONFIG_RELATIVE_PATH = join('.claude', 'harness.json');
 export const SUPPORTED_CONFIG_VERSION = 1;
-export const PROFILES = ['minimal', 'service', 'product'];
 
-const KNOWN_TOP_LEVEL_FIELDS = new Set(['$schema', 'version', 'profile', 'trunk', 'verify', 'knowledge', 'modules']);
+const KNOWN_TOP_LEVEL_FIELDS = new Set(['$schema', 'version', 'features', 'trunk', 'verify', 'knowledge', 'modules']);
 
 const DEFAULT_CONFIG = {
   version: SUPPORTED_CONFIG_VERSION,
-  profile: 'minimal',
+  features: {},
   trunk: 'main',
   verify: [],
-  knowledge: null,
+  knowledge: '.okf',
   modules: {},
 };
 
@@ -37,8 +37,18 @@ export function validateHarnessConfig(rawConfig, knownModuleIds = []) {
   if (rawConfig.version !== undefined && rawConfig.version !== SUPPORTED_CONFIG_VERSION) {
     validationErrors.push(`"version" must be ${SUPPORTED_CONFIG_VERSION}`);
   }
-  if (rawConfig.profile !== undefined && !PROFILES.includes(rawConfig.profile)) {
-    validationErrors.push(`"profile" must be one of: ${PROFILES.join(', ')}`);
+  if (rawConfig.features !== undefined) {
+    if (rawConfig.features === null || typeof rawConfig.features !== 'object' || Array.isArray(rawConfig.features)) {
+      validationErrors.push('"features" must be an object of feature id -> true/false');
+    } else {
+      for (const [featureId, featureSetting] of Object.entries(rawConfig.features)) {
+        if (!KNOWN_FEATURE_IDS.includes(featureId)) {
+          validationErrors.push(`unknown feature "${featureId}" (known: ${KNOWN_FEATURE_IDS.join(', ')})`);
+        } else if (typeof featureSetting !== 'boolean') {
+          validationErrors.push(`"features.${featureId}" must be true or false`);
+        }
+      }
+    }
   }
   if (rawConfig.trunk !== undefined && (typeof rawConfig.trunk !== 'string' || !rawConfig.trunk.trim())) {
     validationErrors.push('"trunk" must be a non-empty string');
@@ -84,17 +94,20 @@ export function loadHarnessConfig(projectRoot, knownModuleIds = []) {
   }
   const validationErrors = validateHarnessConfig(rawConfig, knownModuleIds);
   if (validationErrors.length) return { status: 'invalid', configPath, errors: validationErrors };
-  return { status: 'ok', configPath, config: { ...DEFAULT_CONFIG, ...rawConfig, modules: { ...rawConfig.modules } } };
+  return {
+    status: 'ok',
+    configPath,
+    config: { ...DEFAULT_CONFIG, ...rawConfig, features: { ...rawConfig.features }, modules: { ...rawConfig.modules } },
+  };
 }
 
-// A module runs when the profile includes it, unless the repo turns it off, or when the repo
-// turns it on explicitly in a profile that does not include it.
+// A module runs when its feature is enabled for the repo, unless the repo switches that single
+// module off with `modules.<id>: false` (or `{ "enabled": false }`).
 export function isModuleEnabled(moduleDefinition, config) {
   const moduleSetting = config.modules?.[moduleDefinition.id];
   if (moduleSetting === false) return false;
-  if (moduleSetting === true) return true;
-  if (moduleSetting && typeof moduleSetting.enabled === 'boolean') return moduleSetting.enabled;
-  return moduleDefinition.profiles.includes(config.profile);
+  if (moduleSetting && moduleSetting.enabled === false) return false;
+  return isFeatureEnabled(moduleDefinition.feature, config);
 }
 
 export function getModuleOptions(moduleId, config) {

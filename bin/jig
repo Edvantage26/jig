@@ -1,0 +1,64 @@
+#!/usr/bin/env node
+// jig CLI. On the Bash PATH while the plugin is enabled.
+//   jig status [--json]                         what this repo runs, and the available features
+//   jig init --features okf,danger [--verify "npm test" ...] [--knowledge .okf] [--json]
+// Run from anywhere inside the repo; files are written at the repo root.
+
+import { findRepoRoot, describeRepo, setupRepo } from '../src/cli/setup-repo.mjs';
+
+const [commandName, ...commandArguments] = process.argv.slice(2);
+
+function readOption(optionName) {
+  const optionIndex = commandArguments.indexOf(optionName);
+  return optionIndex >= 0 ? commandArguments[optionIndex + 1] : undefined;
+}
+
+function readRepeatedOption(optionName) {
+  const optionValues = [];
+  commandArguments.forEach((commandArgument, argumentIndex) => {
+    if (commandArgument === optionName && commandArguments[argumentIndex + 1] !== undefined) optionValues.push(commandArguments[argumentIndex + 1]);
+  });
+  return optionValues;
+}
+
+const wantsJson = commandArguments.includes('--json');
+const repoRoot = findRepoRoot(process.cwd());
+
+try {
+  if (commandName === 'status') {
+    const repoDescription = describeRepo(repoRoot);
+    if (wantsJson) console.log(JSON.stringify(repoDescription, null, 2));
+    else {
+      console.log(`repo: ${repoDescription.repoRoot}`);
+      console.log(`harness.json: ${repoDescription.hasHarness ? 'present' : 'missing (run jig init)'}`);
+      console.log(`trunk: ${repoDescription.trunk} | knowledge: ${repoDescription.knowledge} (${repoDescription.hasKnowledgeBundle ? 'bundle found' : 'no bundle'})`);
+      for (const featureStatus of repoDescription.features) {
+        console.log(`  [${featureStatus.enabled ? 'x' : ' '}] ${featureStatus.id}: ${featureStatus.title}${featureStatus.enabledByDefault ? ' (default on)' : ''}`);
+      }
+    }
+  } else if (commandName === 'init') {
+    const featureList = readOption('--features');
+    if (featureList === undefined) throw new Error('--features is required, e.g. --features okf,danger (use --features "" for none)');
+    const verifyCommands = readRepeatedOption('--verify');
+    const setupResult = setupRepo(repoRoot, {
+      enabledFeatureIds: featureList.split(',').map((featureId) => featureId.trim()).filter(Boolean),
+      verifyCommands: verifyCommands.length ? verifyCommands : undefined,
+      knowledgePath: readOption('--knowledge'),
+    });
+    if (wantsJson) console.log(JSON.stringify(setupResult, null, 2));
+    else {
+      console.log(`wrote ${setupResult.harnessPath}`);
+      console.log(`wrote ${setupResult.settingsPath}`);
+      console.log(`features: ${Object.entries(setupResult.features).map(([featureId, isEnabled]) => `${featureId}=${isEnabled ? 'on' : 'off'}`).join(', ')}`);
+      if (setupResult.disabledPlugins.length) console.log(`disabled in this repo (duplicate OKF skills): ${setupResult.disabledPlugins.join(', ')}`);
+      if (setupResult.features.okf && !setupResult.hasKnowledgeBundle) console.log(`no OKF bundle at ${setupResult.knowledge}/ yet: create it with /jig:okf (produce mode)`);
+      console.log('Commit .claude/harness.json and .claude/settings.json, then restart the Claude Code session.');
+    }
+  } else {
+    console.log('usage: jig status [--json] | jig init --features okf,danger [--verify "<command>" ...] [--knowledge <path>] [--json]');
+    process.exitCode = commandName ? 1 : 0;
+  }
+} catch (commandError) {
+  console.error(`jig: ${commandError.message}`);
+  process.exitCode = 1;
+}

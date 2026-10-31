@@ -1,7 +1,7 @@
 {
   "name": "jig",
-  "version": "0.1.0",
-  "description": "The jig for your coding agent: guardrails, verification and project memory that make every change come out the same way, in any repo.",
+  "version": "0.2.0",
+  "description": "The jig for your coding agent: per-repo features (OKF project knowledge, destructive-command guard...) chosen in .claude/harness.json.",
   "author": {
     "name": "Edvantage",
     "url": "https://github.com/Edvantage26"
@@ -9,5 +9,20 @@
   "homepage": "https://github.com/Edvantage26/jig",
   "repository": "https://github.com/Edvantage26/jig",
   "license": "MIT",
-  "keywords": ["harness", "guardrails", "hooks", "verification", "okf", "tdd", "sdd"]
+  "keywords": [
+    "harness",
+    "guardrails",
+    "hooks",
+    "verification",
+    "okf",
+    "tdd",
+    "sdd"
+  ],
+  "skills": [
+    "./packs/okf/skills/"
+  ],
+  "agents": [
+    "./packs/okf/agents/bundle-weaver.md",
+    "./packs/okf/agents/event-analyzer.md"
+  ]
 }

@@ -1,12 +1,15 @@
 // Every jig module, in one list. A module is:
-//   { id, event, profiles, description, toolNames?, run(moduleContext) -> decision }
+//   { id, event, feature, description, toolNames?, run(moduleContext) -> decision }
+// `feature` is an id from src/core/features.mjs; the repo enables features in harness.json.
 // `toolNames` (PreToolUse/PostToolUse only) limits the module to those tools; omit it to see all.
 // Adding a module means adding it here; hooks/hooks.json does not change.
 
 import briefContext from '../context/brief.mjs';
 import dangerGuard from '../guards/danger.mjs';
+import okfIndexContext from '../okf/okf-index.mjs';
+import okfUpkeepGate from '../okf/okf-upkeep.mjs';
 
-export const ALL_MODULES = [briefContext, dangerGuard];
+export const ALL_MODULES = [briefContext, okfIndexContext, dangerGuard, okfUpkeepGate];
 
 export const KNOWN_MODULE_IDS = ALL_MODULES.map((moduleDefinition) => moduleDefinition.id);
 
