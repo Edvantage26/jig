@@ -66,7 +66,7 @@ export function buildUpkeepReminder(bundleRelativePath, specVersion, pendingFile
   const reminderLines = [`OKF: this session left knowledge newer than the last update of ${bundleRelativePath}/.`];
   if (pendingFiles.length) {
     reminderLines.push('', 'Repo files changed after the last bundle update:');
-    reminderLines.push(...pendingFiles.slice(0, MAX_LISTED_FILES).map((pendingFile) => `  - ${pendingFile.path}`));
+    reminderLines.push(...pendingFiles.slice(0, MAX_LISTED_FILES).map((pendingFile) => `  - ${pendingFile.path}${pendingFile.isDeleted ? ' (deleted)' : ''}`));
     if (pendingFiles.length > MAX_LISTED_FILES) reminderLines.push(`  - ... and ${pendingFiles.length - MAX_LISTED_FILES} more`);
   }
   if (pendingMemories.length) {
@@ -160,11 +160,12 @@ export default {
     const pendingFiles = listSessionChangedFiles(projectRoot, baseHead, bundleRelativePath)
       .map((changedPath) => {
         const absolutePath = join(projectRoot, changedPath);
-        // A deleted file has no mtime: it counts as changed now.
-        const modifiedMilliseconds = existsSync(absolutePath) ? statSync(absolutePath).mtimeMs : Date.now();
-        return { path: changedPath, modifiedMilliseconds };
+        // A deleted file has no mtime: it is pending, with a fixed signature so it is asked only once.
+        if (!existsSync(absolutePath)) return { path: changedPath, isDeleted: true, signature: `${changedPath}:deleted` };
+        const modifiedMilliseconds = statSync(absolutePath).mtimeMs;
+        return { path: changedPath, isDeleted: false, modifiedMilliseconds, signature: `${changedPath}:${Math.floor(modifiedMilliseconds)}` };
       })
-      .filter((pendingFile) => pendingFile.modifiedMilliseconds > bundleUpdatedMilliseconds);
+      .filter((pendingFile) => pendingFile.isDeleted || pendingFile.modifiedMilliseconds > bundleUpdatedMilliseconds);
     const pendingMemories = listRecentMemories(
       memoryDirectoriesFor([hookInput.cwd, projectRoot], homeDirectory),
       sessionStartMilliseconds,
@@ -172,7 +173,7 @@ export default {
     );
     if (!pendingFiles.length && !pendingMemories.length) return bundleChangedInSession ? checkBundleValidity(validityContext) : allowDecision();
 
-    const pendingSignature = [...pendingFiles.map((pendingFile) => `${pendingFile.path}:${Math.floor(pendingFile.modifiedMilliseconds)}`),
+    const pendingSignature = [...pendingFiles.map((pendingFile) => pendingFile.signature),
       ...pendingMemories.map((pendingMemory) => `${pendingMemory.name}:${Math.floor(pendingMemory.modifiedMilliseconds)}`)].sort().join('\n');
     const remindedPath = sessionStatePath(stateDirectory, hookInput.session_id, projectRoot, 'reminded');
     const pendingFingerprint = shortHash(pendingSignature);

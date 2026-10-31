@@ -252,3 +252,15 @@ test('validation: without python3 it fails open', () => {
   writeFileSync(join(projectRoot, '.okf', 'broken.md'), BROKEN_CONCEPT);
   assert.equal(stopSession(projectRoot, options), null);
 });
+
+test('okf-upkeep: a deleted file is asked about once, not on every stop', () => {
+  const projectRoot = createRepoWithBundle();
+  const options = hookOptions();
+  startSession(projectRoot, options);
+  execFileSync('rm', [join(projectRoot, 'src', 'app.py')]);
+  const firstStop = stopSession(projectRoot, options);
+  assert.equal(firstStop.decision, 'block');
+  assert.match(firstStop.reason, /- src\/app\.py \(deleted\)/);
+  assert.equal(stopSession(projectRoot, options), null);
+  assert.equal(stopSession(projectRoot, options), null);
+});
