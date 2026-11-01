@@ -48,16 +48,31 @@ export function memoryDirectoriesFor(directoryPaths, homeDirectory = homedir()) 
 }
 
 const MEMORY_WRITING_TOOLS = new Set(['Write', 'Edit', 'MultiEdit', 'NotebookEdit']);
+const INVESTIGATION_TOOLS = new Set(['Bash', 'WebFetch', 'WebSearch']);
+const INVESTIGATION_CALLS_BEFORE_REMINDER = 10;
+const TOOL_USE_MARKER = '"type":"tool_use"';
 
-// Memory files this session wrote, read from its own transcript (Write/Edit tool calls). Returns
-// null when the transcript is not available, so the caller can fall back to the frontmatter.
-// Transcripts grow to tens of MB, so the scan is incremental: `scanState` keeps the byte offset
-// already read and the paths found, and each call only reads what was appended since.
-export function listMemoryFilesWrittenBySession(transcriptPath, memoryDirectories, scanState = { offset: 0, paths: [] }) {
+function isInvestigationTool(toolName) {
+  return INVESTIGATION_TOOLS.has(toolName) || String(toolName).startsWith('mcp__');
+}
+
+// One incremental pass over the session transcript (tens of MB in long sessions): `scanState`
+// keeps the byte offset already read, so each call only reads what was appended since. It collects
+//   - `paths`: memory files this session wrote (Write/Edit), and
+//   - `investigationCalls`: investigation tool calls (shell, MCP, web) since the session last
+//     edited the bundle, reset to 0 by any bundle edit.
+// Returns null when the transcript is not available.
+export function scanSessionTranscript(transcriptPath, { memoryDirectories, bundleRelativePath }, scanState = { offset: 0, paths: [], investigationCalls: 0 }) {
   if (!transcriptPath || !existsSync(transcriptPath)) return null;
-  const writtenMemoryPaths = new Set(scanState.paths);
+  const writtenMemoryPaths = new Set(scanState.paths || []);
+  let investigationCalls = scanState.investigationCalls || 0;
+  const bundleMarker = `/${String(bundleRelativePath || '.okf').replace(/^\.\//, '').replace(/\/+$/, '')}/`;
   const transcriptSize = statSync(transcriptPath).size;
   const startOffset = scanState.offset <= transcriptSize ? scanState.offset : 0;
+  if (startOffset === 0) {
+    writtenMemoryPaths.clear();
+    investigationCalls = 0;
+  }
   const transcriptDescriptor = openSync(transcriptPath, 'r');
   let appendedText;
   try {
@@ -70,26 +85,56 @@ export function listMemoryFilesWrittenBySession(transcriptPath, memoryDirectorie
   // Only complete lines are read; a line still being written is picked up next time.
   const lastNewlineIndex = appendedText.lastIndexOf('\n');
   const completeText = lastNewlineIndex >= 0 ? appendedText.slice(0, lastNewlineIndex + 1) : '';
-  for (const memoryDirectory of memoryDirectories) {
-    let matchIndex = completeText.indexOf(memoryDirectory);
-    while (matchIndex >= 0) {
-      const lineStart = completeText.lastIndexOf('\n', matchIndex) + 1;
-      const lineEnd = completeText.indexOf('\n', matchIndex);
-      try {
-        const transcriptEvent = JSON.parse(completeText.slice(lineStart, lineEnd));
-        for (const contentBlock of transcriptEvent?.message?.content || []) {
-          const writtenPath = contentBlock?.input?.file_path;
-          if (contentBlock?.type === 'tool_use' && MEMORY_WRITING_TOOLS.has(contentBlock.name) && typeof writtenPath === 'string') writtenMemoryPaths.add(writtenPath);
+  let markerIndex = completeText.indexOf(TOOL_USE_MARKER);
+  while (markerIndex >= 0) {
+    const lineStart = completeText.lastIndexOf('\n', markerIndex) + 1;
+    const lineEnd = completeText.indexOf('\n', markerIndex);
+    try {
+      const transcriptEvent = JSON.parse(completeText.slice(lineStart, lineEnd));
+      for (const contentBlock of transcriptEvent?.message?.content || []) {
+        if (contentBlock?.type !== 'tool_use') continue;
+        const toolPath = contentBlock?.input?.file_path;
+        if (MEMORY_WRITING_TOOLS.has(contentBlock.name) && typeof toolPath === 'string') {
+          if (memoryDirectories.some((memoryDirectory) => toolPath.startsWith(`${memoryDirectory}/`))) writtenMemoryPaths.add(toolPath);
+          if (toolPath.includes(bundleMarker)) investigationCalls = 0;
+        } else if (isInvestigationTool(contentBlock.name)) {
+          investigationCalls += 1;
         }
-      } catch {
-        // Not a JSON event line: ignore.
       }
-      matchIndex = completeText.indexOf(memoryDirectory, lineEnd);
+    } catch {
+      // Not a JSON event line: ignore.
     }
+    markerIndex = completeText.indexOf(TOOL_USE_MARKER, lineEnd);
   }
   scanState.offset = startOffset + Buffer.byteLength(completeText, 'utf8');
   scanState.paths = [...writtenMemoryPaths];
-  return writtenMemoryPaths;
+  scanState.investigationCalls = investigationCalls;
+  return { memoryPaths: writtenMemoryPaths, investigationCalls };
+}
+
+// Kept for callers that only need the memory files.
+export function listMemoryFilesWrittenBySession(transcriptPath, memoryDirectories, scanState) {
+  const transcriptScan = scanSessionTranscript(transcriptPath, { memoryDirectories, bundleRelativePath: '.okf' }, scanState);
+  return transcriptScan ? transcriptScan.memoryPaths : null;
+}
+
+function loadScanState(scanStatePath) {
+  try {
+    return { offset: 0, paths: [], investigationCalls: 0, ...JSON.parse(readStateText(scanStatePath) || '{}') };
+  } catch {
+    return { offset: 0, paths: [], investigationCalls: 0 };
+  }
+}
+
+export function buildInvestigationReminder(bundleRelativePath, investigationCalls) {
+  return [
+    `OKF: this session has run ${investigationCalls} investigation steps (queries, commands, MCP calls) without updating ${bundleRelativePath}/.`,
+    'Record what will be worth having later, in the matching concept (or a new one):',
+    '  - findings: causes, figures, how something really behaves, what was ruled out;',
+    '  - ways to validate: how to check that something works or is correct (queries, commands, what to compare);',
+    '  - ways of working: procedures, steps or queries that worked and should be repeated.',
+    'Keep it short and factual; do not copy raw output. If nothing is worth keeping, say so in one line and finish.',
+  ].join('\n');
 }
 
 function readMemoryOriginSession(memoryFilePath) {
@@ -101,16 +146,8 @@ function readMemoryOriginSession(memoryFilePath) {
 // Only memories this session wrote count: other sessions open on the same repo write to the same
 // memory folder, and their knowledge is theirs to move to the bundle. The transcript says which
 // files this session wrote; without it, the frontmatter's originSessionId decides.
-function listRecentMemories(memoryDirectories, sessionStartMilliseconds, bundleUpdatedMilliseconds, sessionId, transcriptPath, scanStatePath) {
+function listRecentMemories(memoryDirectories, sessionStartMilliseconds, bundleUpdatedMilliseconds, sessionId, sessionWrittenMemoryPaths) {
   const recentMemories = [];
-  let scanState = { offset: 0, paths: [] };
-  try {
-    scanState = { ...scanState, ...JSON.parse(readStateText(scanStatePath) || '{}') };
-  } catch {
-    // Corrupt state: rescan from the start.
-  }
-  const sessionWrittenMemoryPaths = listMemoryFilesWrittenBySession(transcriptPath, memoryDirectories, scanState);
-  if (sessionWrittenMemoryPaths) writeStateText(scanStatePath, JSON.stringify(scanState));
   for (const memoryDirectory of memoryDirectories) {
     if (!existsSync(memoryDirectory)) continue;
     for (const memoryFileName of readdirSync(memoryDirectory)) {
@@ -199,7 +236,7 @@ export default {
   id: MODULE_ID,
   event: 'Stop',
   feature: 'okf',
-  description: 'Asks to update the OKF bundle when the session changed files or saved memories after its last update, and validates the bundle when the session changed it.',
+  description: 'Asks to update the OKF bundle after file changes, new memories or a long run of investigation, and validates the bundle when the session changed it.',
   run({ hookInput, config, projectRoot, environment, homeDirectory }) {
     const bundleRelativePath = config.knowledge || '.okf';
     const bundleDirectory = resolveBundleDirectory(projectRoot, config);
@@ -238,25 +275,45 @@ export default {
     const deletionsRemindedPath = sessionStatePath(stateDirectory, hookInput.session_id, projectRoot, 'deletions');
     const deletionsAlreadyReminded = new Set((readStateText(deletionsRemindedPath) || '').split('\n').filter(Boolean));
     const pendingFilesToRemind = pendingFiles.filter((pendingFile) => !(pendingFile.isDeleted && deletionsAlreadyReminded.has(pendingFile.path)));
+    const memoryDirectories = memoryDirectoriesFor([hookInput.cwd, projectRoot], homeDirectory);
+    const scanStatePath = sessionStatePath(stateDirectory, hookInput.session_id, projectRoot, 'memory-scan');
+    const scanState = loadScanState(scanStatePath);
+    const transcriptScan = scanSessionTranscript(hookInput.transcript_path, { memoryDirectories, bundleRelativePath }, scanState);
+    if (transcriptScan) writeStateText(scanStatePath, JSON.stringify(scanState));
     const pendingMemories = listRecentMemories(
-      memoryDirectoriesFor([hookInput.cwd, projectRoot], homeDirectory),
+      memoryDirectories,
       sessionStartMilliseconds,
       bundleUpdatedMilliseconds,
       hookInput.session_id,
-      hookInput.transcript_path,
-      sessionStatePath(stateDirectory, hookInput.session_id, projectRoot, 'memory-scan'),
+      transcriptScan ? transcriptScan.memoryPaths : null,
     );
-    if (!pendingFilesToRemind.length && !pendingMemories.length) return bundleChangedInSession ? checkBundleValidity(validityContext) : allowDecision();
+
+    // No file or memory reminder due: knowledge found by investigating (queries, commands) leaves no
+    // file behind, so a long run of investigation without touching the bundle asks for it too.
+    const finishWithoutUpkeepReminder = () => {
+      if (transcriptScan && transcriptScan.investigationCalls >= INVESTIGATION_CALLS_BEFORE_REMINDER) {
+        scanState.investigationCalls = 0;
+        writeStateText(scanStatePath, JSON.stringify(scanState));
+        return blockDecision(MODULE_ID, buildInvestigationReminder(bundleRelativePath, transcriptScan.investigationCalls));
+      }
+      return bundleChangedInSession ? checkBundleValidity(validityContext) : allowDecision();
+    };
+    if (!pendingFilesToRemind.length && !pendingMemories.length) return finishWithoutUpkeepReminder();
 
     const pendingSignature = [...pendingFilesToRemind.map((pendingFile) => pendingFile.signature),
       ...pendingMemories.map((pendingMemory) => `${pendingMemory.name}:${Math.floor(pendingMemory.modifiedMilliseconds)}`)].sort().join('\n');
     const remindedPath = sessionStatePath(stateDirectory, hookInput.session_id, projectRoot, 'reminded');
     const pendingFingerprint = shortHash(pendingSignature);
-    if (readStateText(remindedPath) === pendingFingerprint) return bundleChangedInSession ? checkBundleValidity(validityContext) : allowDecision();
+    if (readStateText(remindedPath) === pendingFingerprint) return finishWithoutUpkeepReminder();
     writeStateText(remindedPath, pendingFingerprint);
     const newlyRemindedDeletions = pendingFilesToRemind.filter((pendingFile) => pendingFile.isDeleted).map((pendingFile) => pendingFile.path);
     if (newlyRemindedDeletions.length) writeStateText(deletionsRemindedPath, [...deletionsAlreadyReminded, ...newlyRemindedDeletions].join('\n'));
 
+    // The upkeep reminder already asks for the bundle: the investigation count starts over.
+    if (transcriptScan) {
+      scanState.investigationCalls = 0;
+      writeStateText(scanStatePath, JSON.stringify(scanState));
+    }
     const specVersion = readBundleSpecVersion(indexText);
     return blockDecision(MODULE_ID, buildUpkeepReminder(bundleRelativePath, specVersion, pendingFilesToRemind, pendingMemories));
   },

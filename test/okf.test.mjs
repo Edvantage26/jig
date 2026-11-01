@@ -389,3 +389,62 @@ test('okf-recall: switched off with the okf feature', () => {
   writeFileSync(join(projectRoot, '.claude', 'jig.json'), JSON.stringify({ features: { okf: false } }));
   assert.equal(sendPrompt(projectRoot, hookOptions(), '¿Por qué la plantilla de Gastrohub no lee la cantidad?'), null);
 });
+
+function writeToolTranscript(options, toolUses) {
+  const transcriptPath = join(options.homeDirectory, 'tools-transcript.jsonl');
+  const transcriptLines = toolUses.map(([toolName, toolInput]) => JSON.stringify({
+    type: 'assistant',
+    message: { content: [{ type: 'tool_use', name: toolName, input: toolInput || {} }] },
+  }));
+  writeFileSync(transcriptPath, `${transcriptLines.join('\n')}\n`);
+  return transcriptPath;
+}
+
+const TEN_INVESTIGATION_STEPS = [
+  ...Array.from({ length: 6 }, () => ['mcp__postgres-prod__query', { sql: 'select 1' }]),
+  ...Array.from({ length: 4 }, () => ['Bash', { command: 'python3 analyze.py' }]),
+];
+
+test('investigation: ten queries/commands without touching the bundle ask to record findings', () => {
+  const projectRoot = createRepoWithBundle();
+  const options = hookOptions();
+  startSession(projectRoot, options);
+  const transcriptPath = writeToolTranscript(options, TEN_INVESTIGATION_STEPS);
+  const stopOutput = stopSession(projectRoot, options, { transcript_path: transcriptPath });
+  assert.equal(stopOutput.decision, 'block');
+  assert.match(stopOutput.reason, /run 10 investigation steps/);
+  assert.match(stopOutput.reason, /ways to validate/);
+  assert.match(stopOutput.reason, /ways of working/);
+  assert.equal(stopSession(projectRoot, options, { transcript_path: transcriptPath }), null, 'the count starts over after a reminder');
+});
+
+test('investigation: fewer steps, or a bundle edit after them, do not ask', () => {
+  const projectRoot = createRepoWithBundle();
+  const options = hookOptions();
+  startSession(projectRoot, options);
+  assert.equal(stopSession(projectRoot, options, { transcript_path: writeToolTranscript(options, TEN_INVESTIGATION_STEPS.slice(0, 9)) }), null);
+  const editedTranscript = writeToolTranscript(options, [...TEN_INVESTIGATION_STEPS, ['Edit', { file_path: join(projectRoot, '.okf', 'overview.md') }]]);
+  const otherOptions = { ...options, environment: { CLAUDE_PLUGIN_DATA: mkdtempSync(join(tmpdir(), 'jig-data-')) } };
+  startSession(projectRoot, otherOptions);
+  assert.equal(stopSession(projectRoot, otherOptions, { transcript_path: editedTranscript }), null);
+});
+
+test('investigation: never right after another hook stop', () => {
+  const projectRoot = createRepoWithBundle();
+  const options = hookOptions();
+  startSession(projectRoot, options);
+  const transcriptPath = writeToolTranscript(options, TEN_INVESTIGATION_STEPS);
+  assert.equal(stopSession(projectRoot, options, { transcript_path: transcriptPath, stop_hook_active: true }), null);
+});
+
+test('investigation: a file reminder wins and resets the count', () => {
+  const projectRoot = createRepoWithBundle();
+  const options = hookOptions();
+  startSession(projectRoot, options);
+  writeFileSync(join(projectRoot, 'src', 'app.py'), 'print(2)\n');
+  const transcriptPath = writeToolTranscript(options, TEN_INVESTIGATION_STEPS);
+  const stopOutput = stopSession(projectRoot, options, { transcript_path: transcriptPath });
+  assert.match(stopOutput.reason, /left knowledge newer/);
+  assert.doesNotMatch(stopOutput.reason, /investigation steps/);
+  assert.equal(stopSession(projectRoot, options, { transcript_path: transcriptPath }), null);
+});

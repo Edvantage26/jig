@@ -5,7 +5,7 @@ description: Project knowledge in an OKF bundle - index at session start, upkeep
 tags: [okf, knowledge, hooks, skills]
 generated:
   by: claude-code/claude-opus-5-5
-  at: '2026-10-31T20:00:00Z'
+  at: '2026-11-01T10:00:00Z'
 sources:
   - id: okf-index
     resource: src/okf/okf-index.mjs
@@ -39,6 +39,13 @@ sources:
   `originSessionId`. Other sessions open on the same repo share the memory folder; their memories
   are theirs to move. A deleted file is mentioned once per session. Asks once per set of pending changes (fingerprint in the
   session state). `.claude/settings.json`, `settings.local.json` and `jig.json` never count.
+- **Investigation reminder (Stop, same module):** knowledge found by querying or running commands
+  leaves no file behind, so the same transcript scan counts investigation steps (Bash, MCP calls,
+  web) since the session last edited the bundle; at 10 or more, with no file/memory reminder due,
+  the agent is asked to record findings, ways to validate and ways of working (or to say in one
+  line that nothing is worth keeping). The count starts over after any reminder or bundle edit.
+  Field data (2026-11-01): a long investigation session ran 831 steps and 41 production queries
+  without writing to the bundle.
 - **Validation gate (Stop, same module):** when the bundle was changed in the session, the hook
   runs the bundled validator itself (`python3 packs/okf/.../okf_validate.py --json`, ~0.2 s on a
   45-concept bundle) and blocks only on ERRORS, listing them; warnings (e.g. v0.1 legacy) never
